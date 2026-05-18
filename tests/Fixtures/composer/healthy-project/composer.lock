@@ -1,0 +1,105 @@
+{
+    "_readme": [
+        "This file is locked, do not edit it."
+    ],
+    "content-hash": "abc123",
+    "packages": [
+        {
+            "name": "spatie/laravel-permission",
+            "version": "6.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/laravel-permission.git",
+                "reference": "abc123"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/laravel-permission/zipball/abc123"
+            },
+            "require": {
+                "php": "^8.1",
+                "illuminate/support": "^10.0|^11.0",
+                "illuminate/auth": "^10.0|^11.0"
+            },
+            "extra": {},
+            "type": "library"
+        },
+        {
+            "name": "guzzlehttp/guzzle",
+            "version": "7.8.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/guzzle/guzzle.git",
+                "reference": "def456"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/def456"
+            },
+            "require": {
+                "php": "^7.4|^8.0"
+            },
+            "extra": {},
+            "type": "library"
+        },
+        {
+            "name": "guzzlehttp/promises",
+            "version": "2.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/guzzle/promises.git",
+                "reference": "ghi789"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/guzzle/promises/zipball/ghi789"
+            },
+            "require": {
+                "php": "^7.4|^8.0"
+            },
+            "extra": {},
+            "type": "library"
+        }
+    ],
+    "packages-dev": [
+        {
+            "name": "pestphp/pest",
+            "version": "3.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/pestphp/pest.git",
+                "reference": "jkl012"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/pestphp/pest/zipball/jkl012"
+            },
+            "require": {
+                "php": "^8.2"
+            },
+            "extra": {},
+            "type": "library"
+        },
+        {
+            "name": "laravel/pint",
+            "version": "1.13.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/pint.git",
+                "reference": "mno345"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laravel/pint/zipball/mno345"
+            },
+            "require": {
+                "php": "^8.1"
+            },
+            "extra": {},
+            "type": "library"
+        }
+    ],
+    "platform": {
+        "php": "^8.2"
+    }
+}
