@@ -119,11 +119,9 @@ final class GitHubCollector
             return is_array($data) ? $data : null;
         } catch (RequestException $e) {
             $response = $e->getResponse();
-            if ($response instanceof ResponseInterface) {
-                if ($this->isRateLimitResponse($response)) {
-                    $this->rateLimited = true;
-                    $this->addRateLimitWarning($response);
-                }
+            if ($response instanceof ResponseInterface && $this->isRateLimitResponse($response)) {
+                $this->rateLimited = true;
+                $this->addRateLimitWarning($response);
             }
 
             return null;
