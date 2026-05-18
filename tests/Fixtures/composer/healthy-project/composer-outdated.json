@@ -1,0 +1,11 @@
+{
+    "installed": [
+        {
+            "name": "spatie/laravel-permission",
+            "version": "6.0.0",
+            "latest": "6.1.0",
+            "latest-status": "semver-safe-update",
+            "description": "Associate users with roles and permissions"
+        }
+    ]
+}

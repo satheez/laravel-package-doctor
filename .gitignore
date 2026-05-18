@@ -1,0 +1,51 @@
+# ----------------------------------------------------------------------
+# Dependencies
+# ----------------------------------------------------------------------
+/vendor/
+/node_modules/
+
+# ----------------------------------------------------------------------
+# Environment & Secrets
+# ----------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ----------------------------------------------------------------------
+# Build / Cache
+# ----------------------------------------------------------------------
+/tmp/
+*.cache
+.rector-cache/
+.phpunit.result.cache
+.phpunit.cache
+
+# ----------------------------------------------------------------------
+# Package Manager
+# ----------------------------------------------------------------------
+composer.lock
+
+# ----------------------------------------------------------------------
+# IDE / Editor
+# ----------------------------------------------------------------------
+.fleet/
+.idea/
+.nova/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.zed/
+
+# ----------------------------------------------------------------------
+# AI / Agent Tooling
+# Commit shared project instructions if your team uses them.
+# Ignore only local, generated, cache, and machine-specific files.
+# ----------------------------------------------------------------------
+
+# Local-only markdown (e.g. CLAUDE.local.md, AGENTS.local.md)
+*.local.md
+
+# Local-only json (e.g. settings.local.json, mcp.local.json)
+*.local.json

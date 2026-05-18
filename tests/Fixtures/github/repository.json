@@ -1,0 +1,32 @@
+{
+    "id": 12345678,
+    "name": "laravel-permission",
+    "full_name": "spatie/laravel-permission",
+    "private": false,
+    "owner": {
+        "login": "spatie",
+        "type": "Organization"
+    },
+    "html_url": "https://github.com/spatie/laravel-permission",
+    "description": "Associate users with roles and permissions",
+    "fork": false,
+    "url": "https://api.github.com/repos/spatie/laravel-permission",
+    "homepage": "https://spatie.be/docs/laravel-permission",
+    "size": 5000,
+    "stargazers_count": 12000,
+    "watchers_count": 12000,
+    "language": "PHP",
+    "forks_count": 1500,
+    "open_issues_count": 50,
+    "default_branch": "main",
+    "archived": false,
+    "disabled": false,
+    "created_at": "2015-01-01T00:00:00Z",
+    "updated_at": "2024-01-10T00:00:00Z",
+    "pushed_at": "2024-01-10T00:00:00Z",
+    "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT"
+    }
+}

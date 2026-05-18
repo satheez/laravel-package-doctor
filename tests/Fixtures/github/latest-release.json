@@ -1,0 +1,8 @@
+{
+    "url": "https://api.github.com/repos/spatie/laravel-permission/releases/12345",
+    "tag_name": "6.1.0",
+    "name": "6.1.0",
+    "prerelease": false,
+    "published_at": "2024-01-01T12:00:00Z",
+    "html_url": "https://github.com/spatie/laravel-permission/releases/tag/6.1.0"
+}

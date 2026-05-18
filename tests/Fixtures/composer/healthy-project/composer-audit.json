@@ -1,0 +1,22 @@
+{
+    "advisories": {
+        "acme/vulnerable-pkg": [
+            {
+                "advisoryId": "CVE-2024-0001",
+                "packageName": "acme/vulnerable-pkg",
+                "title": "SQL injection vulnerability",
+                "link": "https://github.com/advisories/GHSA-xxxx-xxxx-xxxx",
+                "cve": "CVE-2024-0001",
+                "affectedVersions": ">=1.0.0,<1.5.0",
+                "reportedAt": "2024-01-15T00:00:00+00:00",
+                "sources": []
+            }
+        ]
+    },
+    "abandoned": {
+        "acme/abandoned-pkg": {
+            "packageName": "acme/abandoned-pkg",
+            "replacedBy": "acme/new-pkg"
+        }
+    }
+}

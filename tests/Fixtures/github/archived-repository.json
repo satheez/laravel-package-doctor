@@ -1,0 +1,25 @@
+{
+    "id": 99999999,
+    "name": "old-package",
+    "full_name": "acme/old-package",
+    "private": false,
+    "owner": {
+        "login": "acme",
+        "type": "Organization"
+    },
+    "html_url": "https://github.com/acme/old-package",
+    "description": "An archived package",
+    "fork": false,
+    "archived": true,
+    "disabled": false,
+    "stargazers_count": 100,
+    "watchers_count": 100,
+    "forks_count": 10,
+    "open_issues_count": 5,
+    "default_branch": "main",
+    "pushed_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "created_at": "2015-01-01T00:00:00Z",
+    "license": null,
+    "homepage": null
+}

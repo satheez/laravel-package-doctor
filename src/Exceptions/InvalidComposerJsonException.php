@@ -1,0 +1,9 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Satheez\PackageDoctor\Exceptions;
+
+use RuntimeException;
+
+final class InvalidComposerJsonException extends RuntimeException {}

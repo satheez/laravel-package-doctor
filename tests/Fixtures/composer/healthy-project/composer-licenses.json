@@ -1,0 +1,19 @@
+{
+    "name": "acme/app",
+    "version": "1.0.0",
+    "license": "MIT",
+    "dependencies": {
+        "spatie/laravel-permission": {
+            "version": "6.0.0",
+            "license": ["MIT"]
+        },
+        "guzzlehttp/guzzle": {
+            "version": "7.8.0",
+            "license": ["MIT"]
+        },
+        "guzzlehttp/promises": {
+            "version": "2.0.2",
+            "license": ["MIT"]
+        }
+    }
+}

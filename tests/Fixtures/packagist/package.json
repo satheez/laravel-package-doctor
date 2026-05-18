@@ -1,0 +1,66 @@
+{
+    "package": {
+        "name": "spatie/laravel-permission",
+        "description": "Associate users with roles and permissions",
+        "time": "2024-01-01T00:00:00+00:00",
+        "maintainers": [
+            {"name": "spatie", "avatar_url": "https://www.gravatar.com/avatar/abc"}
+        ],
+        "versions": {
+            "6.1.0": {
+                "name": "spatie/laravel-permission",
+                "version": "6.1.0",
+                "version_normalized": "6.1.0.0",
+                "license": ["MIT"],
+                "require": {
+                    "illuminate/support": "^10.0|^11.0"
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://github.com/spatie/laravel-permission.git",
+                    "reference": "abc123"
+                },
+                "dist": {
+                    "type": "zip",
+                    "url": "https://api.github.com/repos/spatie/laravel-permission/zipball/abc123"
+                },
+                "homepage": "https://spatie.be",
+                "time": "2024-01-01T00:00:00+00:00"
+            },
+            "6.0.0": {
+                "name": "spatie/laravel-permission",
+                "version": "6.0.0",
+                "version_normalized": "6.0.0.0",
+                "license": ["MIT"],
+                "require": {
+                    "illuminate/support": "^10.0|^11.0"
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://github.com/spatie/laravel-permission.git",
+                    "reference": "def456"
+                },
+                "dist": {
+                    "type": "zip",
+                    "url": "https://api.github.com/repos/spatie/laravel-permission/zipball/def456"
+                },
+                "homepage": "https://spatie.be",
+                "time": "2023-06-01T00:00:00+00:00"
+            }
+        },
+        "type": "library",
+        "repository": "https://github.com/spatie/laravel-permission",
+        "github_stars": 12000,
+        "github_watchers": 250,
+        "github_forks": 1500,
+        "github_open_issues": 50,
+        "language": "PHP",
+        "abandoned": false,
+        "favers": 12000,
+        "downloads": {
+            "total": 50000000,
+            "monthly": 1500000,
+            "daily": 50000
+        }
+    }
+}
