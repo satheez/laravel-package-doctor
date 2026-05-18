@@ -19,6 +19,7 @@ use Satheez\PackageDoctor\DTO\PackageMetadata;
 use Satheez\PackageDoctor\DTO\ProjectHealthReport;
 use Satheez\PackageDoctor\DTO\ProjectInfo;
 use Satheez\PackageDoctor\DTO\ScanOptions;
+use Satheez\PackageDoctor\DTO\ScanProgress;
 use Satheez\PackageDoctor\Enums\DependencyType;
 use Satheez\PackageDoctor\Enums\UpgradeType;
 use Satheez\PackageDoctor\Readers\ComposerJsonReader;
@@ -85,9 +86,11 @@ final class PackageDoctor
         ];
     }
 
-    public function analyze(ScanOptions $opts): ProjectHealthReport
+    /** @param null|callable(ScanProgress): void $progress */
+    public function analyze(ScanOptions $opts, ?callable $progress = null): ProjectHealthReport
     {
         $this->warnings = [];
+        $this->githubCollector->reset();
 
         $basePath = $this->config['project']['base_path'] ?? base_path();
         $composerJsonPath = $this->config['project']['composer_json_path'] ?? $basePath.'/composer.json';
@@ -95,6 +98,8 @@ final class PackageDoctor
         $workingDir = $this->config['composer']['working_directory'] ?? $basePath;
 
         $project = $this->buildProjectInfo($basePath);
+
+        $this->reportProgress($progress, 'reading_composer', 'Reading composer files');
 
         try {
             $jsonData = $this->jsonReader->read($composerJsonPath);
@@ -112,13 +117,24 @@ final class PackageDoctor
 
         $packages = $this->applyPreScanFilters($packages, $opts);
 
+        $this->reportProgress($progress, 'collecting_composer_metadata', 'Collecting Composer metadata');
+
         $outdated = $opts->offline ? [] : $this->outdatedCollector->collect($opts, $workingDir);
         $audit = $opts->offline ? [] : $this->auditCollector->collect($workingDir);
         $licenses = $opts->offline ? [] : $this->licenseCollector->collect($workingDir);
 
         $results = [];
+        $totalPackages = count($packages);
 
-        foreach ($packages as $package) {
+        foreach ($packages as $index => $package) {
+            $this->reportProgress(
+                $progress,
+                'scanning_packages',
+                "Scanning {$package->name}",
+                $index + 1,
+                $totalPackages,
+            );
+
             $result = $this->analyzePackage(
                 package: $package,
                 project: $project,
@@ -134,6 +150,8 @@ final class PackageDoctor
 
         $results = $this->applyPostScoringFilters($results, $opts);
 
+        $this->reportProgress($progress, 'building_report', 'Building report');
+
         foreach ($this->githubCollector->warnings() as $warning) {
             $this->warnings[] = $warning;
         }
@@ -146,6 +164,21 @@ final class PackageDoctor
             summary: $summary,
             warnings: $this->warnings,
         );
+    }
+
+    /** @param null|callable(ScanProgress): void $progress */
+    private function reportProgress(?callable $progress, string $stage, string $message, ?int $current = null, ?int $total = null): void
+    {
+        if ($progress === null) {
+            return;
+        }
+
+        $progress(new ScanProgress(
+            stage: $stage,
+            message: $message,
+            current: $current,
+            total: $total,
+        ));
     }
 
     private function buildProjectInfo(string $basePath): ProjectInfo

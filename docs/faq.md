@@ -18,6 +18,8 @@ No. GitHub metadata collection is optional. Without a token, GitHub API requests
 PACKAGE_DOCTOR_GITHUB_TOKEN=ghp_your_token_here
 ```
 
+If GitHub reports a rate limit, Package Doctor stops making further uncached GitHub calls for that run, keeps cached GitHub metadata available, and prints one warning in the final report.
+
 Or disable GitHub collection entirely:
 
 ```env
@@ -125,7 +127,7 @@ Transitive dependency issues are real but lower-priority than direct dependency 
 ### The scan is slow. How do I speed it up?
 
 1. **Disable GitHub collection** (the slowest part): `PACKAGE_DOCTOR_GITHUB_ENABLED=false`
-2. **Enable caching** (default is on): Repeated runs within an hour reuse cached Packagist responses.
+2. **Enable caching** (default is on): Repeated runs within an hour reuse cached Packagist and GitHub responses.
 3. **Scan direct deps only**: `--direct` skips transitive packages.
 4. **Use offline mode**: `--offline` skips all external HTTP.
 

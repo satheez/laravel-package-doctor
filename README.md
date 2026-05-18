@@ -134,6 +134,7 @@ These tools are complementary. Package Doctor composes the data `composer outdat
 
 **Output**
 - Readable console table with issue details
+- Realtime terminal progress while scans are running
 - Machine-readable JSON output (`--json`)
 - Structured exit codes for CI (`--ci`)
 - Offline mode that skips external API calls (`--offline`)
@@ -162,6 +163,8 @@ php artisan vendor:publish --tag=package-doctor-config
 ```bash
 php artisan package:doctor
 ```
+
+Normal terminal runs show live scan progress while Composer, Packagist, and GitHub metadata are collected. Progress output is suppressed for `--json`, `--ci`, and non-interactive output so scripts can safely parse the final report.
 
 Example output:
 
@@ -305,6 +308,16 @@ php artisan package:doctor --offline
 ```
 
 Offline mode still runs `composer outdated`, `composer audit`, and `composer licenses`, and reads your lock file. Packagist and GitHub checks are skipped.
+
+## GitHub Rate Limits
+
+Large projects can exhaust GitHub's unauthenticated API limit because repository and release metadata are fetched per package. Add a token for a higher limit:
+
+```env
+PACKAGE_DOCTOR_GITHUB_TOKEN=ghp_your_token_here
+```
+
+If GitHub reports a rate limit during a scan, Package Doctor skips further uncached GitHub calls for the rest of that run, keeps using cached metadata, and includes a single warning in the final report. Keep caching enabled, use `--direct` for focused scans, or set `PACKAGE_DOCTOR_GITHUB_ENABLED=false` when GitHub metadata is not needed.
 
 ---
 

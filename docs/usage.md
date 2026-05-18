@@ -8,6 +8,8 @@ php artisan package:doctor
 
 Scans all packages in `composer.lock` and prints a console health report.
 
+Interactive terminal runs show live progress while the scan is running. Progress is hidden for `--json`, `--ci`, and non-interactive output so automation receives only the final report.
+
 ## All Options
 
 | Option | Description |
@@ -102,6 +104,8 @@ php artisan package:doctor --no-cache
 ```
 
 Useful when you have just published a new version and want fresh Packagist data.
+
+Avoid `--no-cache` on large projects unless fresh metadata is required; cached GitHub responses help prevent rate-limit warnings.
 
 ### Safe upgrades to batch-apply
 

@@ -19,6 +19,7 @@ use Satheez\PackageDoctor\Compatibility\PhpCompatibilityChecker;
 use Satheez\PackageDoctor\DTO\PackageHealthResult;
 use Satheez\PackageDoctor\DTO\ProcessResult;
 use Satheez\PackageDoctor\DTO\ScanOptions;
+use Satheez\PackageDoctor\DTO\ScanProgress;
 use Satheez\PackageDoctor\Readers\ComposerJsonReader;
 use Satheez\PackageDoctor\Readers\ComposerLockReader;
 use Satheez\PackageDoctor\Scoring\PackageScoreCalculator;
@@ -206,6 +207,32 @@ test('analyze builds correct summary structure', function (): void {
     ]);
 
     expect($report->summary['project_score'])->toBeInt()->toBeGreaterThanOrEqual(0)->toBeLessThanOrEqual(100);
+});
+
+test('analyze emits progress updates while scanning packages', function (): void {
+    $doctor = makePackageDoctor(fixturesPath('composer/healthy-project'));
+    $events = [];
+
+    $report = $doctor->analyze(
+        makeServiceScanOptions(),
+        function (ScanProgress $progress) use (&$events): void {
+            $events[] = $progress;
+        },
+    );
+
+    $stages = array_map(fn (ScanProgress $progress): string => $progress->stage, $events);
+    $packageEvents = array_values(array_filter(
+        $events,
+        fn (ScanProgress $progress): bool => $progress->stage === 'scanning_packages',
+    ));
+
+    expect($stages)->toContain('reading_composer');
+    expect($stages)->toContain('collecting_composer_metadata');
+    expect($stages)->toContain('scanning_packages');
+    expect($stages)->toContain('building_report');
+    expect($packageEvents)->not->toBeEmpty();
+    expect($packageEvents[0]->current)->toBe(1);
+    expect($packageEvents[0]->total)->toBe(count($report->results));
 });
 
 test('offline mode skips packagist and github and returns results', function (): void {

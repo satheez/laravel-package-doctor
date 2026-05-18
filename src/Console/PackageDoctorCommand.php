@@ -6,10 +6,12 @@ namespace Satheez\PackageDoctor\Console;
 
 use Illuminate\Console\Command;
 use Satheez\PackageDoctor\DTO\ScanOptions;
+use Satheez\PackageDoctor\DTO\ScanProgress;
 use Satheez\PackageDoctor\Output\CiExitCodeResolver;
 use Satheez\PackageDoctor\Output\ConsoleReportRenderer;
 use Satheez\PackageDoctor\Output\JsonReportRenderer;
 use Satheez\PackageDoctor\Services\PackageDoctor;
+use Symfony\Component\Console\Helper\ProgressIndicator;
 use Throwable;
 
 final class PackageDoctorCommand extends Command
@@ -36,7 +38,32 @@ final class PackageDoctorCommand extends Command
     ): int {
         try {
             $opts = $this->buildScanOptions();
-            $report = $doctor->analyze($opts);
+            $progressIndicator = $this->makeProgressIndicator($opts);
+            $progressStarted = false;
+
+            $report = $doctor->analyze(
+                $opts,
+                $progressIndicator instanceof ProgressIndicator
+                    ? function (ScanProgress $progress) use ($progressIndicator, &$progressStarted): void {
+                        $message = $this->formatProgressMessage($progress);
+
+                        if (! $progressStarted) {
+                            $progressIndicator->start($message);
+                            $progressStarted = true;
+
+                            return;
+                        }
+
+                        $progressIndicator->setMessage($message);
+                        $progressIndicator->advance();
+                    }
+                : null,
+            );
+
+            if ($progressIndicator instanceof ProgressIndicator && $progressStarted) {
+                $progressIndicator->finish('Scan complete');
+                $this->newLine(2);
+            }
 
             if ($opts->json) {
                 $this->line($jsonRenderer->render($report));
@@ -80,5 +107,23 @@ final class PackageDoctorCommand extends Command
             packages: array_values(array_map(strval(...), (array) $this->option('package'))),
             offline: (bool) $this->option('offline'),
         );
+    }
+
+    private function makeProgressIndicator(ScanOptions $opts): ?ProgressIndicator
+    {
+        if ($opts->json || $opts->ci || ! $this->getOutput()->isDecorated()) {
+            return null;
+        }
+
+        return new ProgressIndicator($this->getOutput());
+    }
+
+    private function formatProgressMessage(ScanProgress $progress): string
+    {
+        if ($progress->current !== null && $progress->total !== null) {
+            return sprintf('%s (%d/%d)', $progress->message, $progress->current, $progress->total);
+        }
+
+        return $progress->message;
     }
 }

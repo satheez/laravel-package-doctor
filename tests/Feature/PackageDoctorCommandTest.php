@@ -9,6 +9,21 @@ it('runs the package:doctor command successfully', function (): void {
         ->assertExitCode(0);
 });
 
+it('keeps json output machine readable without progress messages', function (): void {
+    $this->artisan('package:doctor --offline --json')
+        ->expectsOutputToContain('"packages"')
+        ->doesntExpectOutputToContain('Scanning')
+        ->doesntExpectOutputToContain('Reading composer')
+        ->assertExitCode(0);
+});
+
+it('suppresses progress messages in ci mode', function (): void {
+    $this->artisan('package:doctor --offline --ci')
+        ->doesntExpectOutputToContain('Scanning')
+        ->doesntExpectOutputToContain('Reading composer')
+        ->assertExitCode(0);
+});
+
 it('registers the package:doctor command', function (): void {
     expect($this->app->make(Kernel::class)->all())
         ->toHaveKey('package:doctor');

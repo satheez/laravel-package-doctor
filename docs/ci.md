@@ -153,4 +153,6 @@ GitHub API calls are the slowest part of a scan. Disable if you don't need archi
 PACKAGE_DOCTOR_GITHUB_ENABLED=false php artisan package:doctor --ci
 ```
 
-Or use the cache. It defaults to 3600 seconds, so repeated CI runs within an hour reuse cached Packagist responses.
+Or use the cache. It defaults to 3600 seconds, so repeated CI runs within an hour reuse cached Packagist and GitHub responses.
+
+For larger projects, set `PACKAGE_DOCTOR_GITHUB_TOKEN` in CI. If GitHub reports a rate limit, Package Doctor skips further uncached GitHub calls for that run and leaves the rest of the scan intact.
