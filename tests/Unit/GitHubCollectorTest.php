@@ -6,11 +6,13 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Cache\ArrayStore;
 use Illuminate\Cache\Repository;
 use Satheez\PackageDoctor\Collectors\GitHubCollector;
+use Satheez\PackageDoctor\Support\CacheKey;
 
 function makeGitHubConfig(): array
 {
@@ -94,14 +96,105 @@ test('returns null when no latest release (404)', function (): void {
 
 test('adds warning on rate limit (403)', function (): void {
     $client = makeGitHubClient([
-        new RequestException('Forbidden', new Request('GET', '/'), new Response(403)),
+        new RequestException('Forbidden', new Request('GET', '/'), new Response(403, [
+            'x-ratelimit-remaining' => '0',
+        ])),
     ]);
 
     $collector = new GitHubCollector($client, makeGitHubCache(), makeGitHubConfig());
     $result = $collector->fetchRepository('acme', 'pkg', offline: false, noCache: false);
 
     expect($result)->toBeNull();
-    expect($collector->warnings())->toContain('GitHub API rate limit reached. Repository metadata skipped. Tip: Set PACKAGE_DOCTOR_GITHUB_TOKEN for higher limits.');
+    expect(str_contains($collector->warnings()[0], 'GitHub API rate limit reached'))->toBeTrue();
+    expect(str_contains($collector->warnings()[0], 'PACKAGE_DOCTOR_GITHUB_TOKEN'))->toBeTrue();
+});
+
+test('skips further uncached github requests after rate limit', function (): void {
+    $history = [];
+    $mock = new MockHandler([
+        new RequestException(
+            'Forbidden',
+            new Request('GET', '/'),
+            new Response(403, [
+                'x-ratelimit-remaining' => '0',
+                'x-ratelimit-reset' => '1735689600',
+            ]),
+        ),
+        new Response(200, [], file_get_contents(__DIR__.'/../Fixtures/github/latest-release.json')),
+    ]);
+    $handlerStack = HandlerStack::create($mock);
+    $handlerStack->push(Middleware::history($history));
+
+    $collector = new GitHubCollector(
+        new Client(['handler' => $handlerStack]),
+        makeGitHubCache(),
+        makeGitHubConfig(),
+    );
+
+    $first = $collector->fetchRepository('acme', 'pkg', offline: false, noCache: false);
+    $second = $collector->fetchLatestRelease('acme', 'pkg', offline: false, noCache: false);
+
+    expect($first)->toBeNull();
+    expect($second)->toBeNull();
+    expect($history)->toHaveCount(1);
+    expect($collector->warnings())->toHaveCount(1);
+    expect($collector->warnings()[0])->toContain('resets at 2025-01-01T00:00:00+00:00');
+});
+
+test('returns cached github data after rate limit', function (): void {
+    $history = [];
+    $mock = new MockHandler([
+        new RequestException(
+            'Forbidden',
+            new Request('GET', '/'),
+            new Response(403, ['x-ratelimit-remaining' => '0']),
+        ),
+    ]);
+    $handlerStack = HandlerStack::create($mock);
+    $handlerStack->push(Middleware::history($history));
+    $cache = makeGitHubCache();
+    $cache->put(CacheKey::githubRelease('acme', 'pkg'), ['tag_name' => '1.2.3'], 3600);
+
+    $collector = new GitHubCollector(
+        new Client(['handler' => $handlerStack]),
+        $cache,
+        makeGitHubConfig(),
+    );
+
+    $collector->fetchRepository('acme', 'pkg', offline: false, noCache: false);
+    $cached = $collector->fetchLatestRelease('acme', 'pkg', offline: false, noCache: false);
+
+    expect($cached)->toBe(['tag_name' => '1.2.3']);
+    expect($history)->toHaveCount(1);
+});
+
+test('resets rate limit state between scans', function (): void {
+    $history = [];
+    $mock = new MockHandler([
+        new RequestException(
+            'Forbidden',
+            new Request('GET', '/'),
+            new Response(403, ['x-ratelimit-remaining' => '0']),
+        ),
+        new Response(200, [], file_get_contents(__DIR__.'/../Fixtures/github/latest-release.json')),
+    ]);
+    $handlerStack = HandlerStack::create($mock);
+    $handlerStack->push(Middleware::history($history));
+
+    $collector = new GitHubCollector(
+        new Client(['handler' => $handlerStack]),
+        makeGitHubCache(),
+        makeGitHubConfig(),
+    );
+
+    $collector->fetchRepository('acme', 'pkg', offline: false, noCache: false);
+    $collector->reset();
+
+    $result = $collector->fetchLatestRelease('acme', 'pkg', offline: false, noCache: false);
+
+    expect($result)->not->toBeNull();
+    expect($history)->toHaveCount(2);
+    expect($collector->warnings())->toBe([]);
 });
 
 test('returns null in offline mode', function (): void {

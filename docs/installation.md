@@ -40,6 +40,8 @@ Add to your `.env`:
 PACKAGE_DOCTOR_GITHUB_TOKEN=ghp_your_token_here
 ```
 
+For projects with many packages, keep the metadata cache enabled and add the token before running full scans. If GitHub reports a rate limit, Package Doctor stops making further uncached GitHub calls for that run and keeps the rest of the report usable.
+
 GitHub metadata collection can be disabled entirely:
 
 ```env

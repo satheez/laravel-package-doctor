@@ -16,12 +16,20 @@ final class GitHubCollector
     /** @var list<string> */
     private array $warnings = [];
 
+    private bool $rateLimited = false;
+
     public function __construct(
         private readonly ClientInterface $client,
         private readonly CacheRepository $cache,
         /** @var array<string, mixed> */
         private readonly array $config,
     ) {}
+
+    public function reset(): void
+    {
+        $this->warnings = [];
+        $this->rateLimited = false;
+    }
 
     /** @return array<string, mixed>|null */
     public function fetchRepository(string $owner, string $repo, bool $offline, bool $noCache): ?array
@@ -37,6 +45,10 @@ final class GitHubCollector
             if ($cached !== null) {
                 return $cached;
             }
+        }
+
+        if ($this->rateLimited) {
+            return null;
         }
 
         $data = $this->get("/repos/{$owner}/{$repo}");
@@ -62,6 +74,10 @@ final class GitHubCollector
             if ($cached !== null) {
                 return $cached;
             }
+        }
+
+        if ($this->rateLimited) {
+            return null;
         }
 
         $data = $this->get("/repos/{$owner}/{$repo}/releases/latest");
@@ -104,9 +120,9 @@ final class GitHubCollector
         } catch (RequestException $e) {
             $response = $e->getResponse();
             if ($response instanceof ResponseInterface) {
-                $statusCode = $response->getStatusCode();
-                if ($statusCode === 403 || $statusCode === 429) {
-                    $this->warnings[] = 'GitHub API rate limit reached. Repository metadata skipped. Tip: Set PACKAGE_DOCTOR_GITHUB_TOKEN for higher limits.';
+                if ($this->isRateLimitResponse($response)) {
+                    $this->rateLimited = true;
+                    $this->addRateLimitWarning($response);
                 }
             }
 
@@ -129,5 +145,55 @@ final class GitHubCollector
     private function ttl(): int
     {
         return (int) ($this->config['cache']['ttl_seconds'] ?? 3600);
+    }
+
+    private function isRateLimitResponse(ResponseInterface $response): bool
+    {
+        $statusCode = $response->getStatusCode();
+
+        if ($statusCode === 429) {
+            return true;
+        }
+
+        if ($statusCode !== 403) {
+            return false;
+        }
+
+        if ($response->getHeaderLine('x-ratelimit-remaining') === '0') {
+            return true;
+        }
+
+        $body = mb_strtolower((string) $response->getBody());
+
+        return str_contains($body, 'rate limit');
+    }
+
+    private function addRateLimitWarning(ResponseInterface $response): void
+    {
+        if ($this->warnings !== []) {
+            return;
+        }
+
+        $warning = 'GitHub API rate limit reached. Repository metadata skipped for the rest of this run. Tip: Set PACKAGE_DOCTOR_GITHUB_TOKEN for higher limits.';
+        $resetAt = $this->resetAt($response);
+
+        if ($resetAt !== null) {
+            $warning .= " Limit resets at {$resetAt}.";
+        }
+
+        $this->warnings[] = $warning;
+    }
+
+    private function resetAt(ResponseInterface $response): ?string
+    {
+        $reset = $response->getHeaderLine('x-ratelimit-reset');
+
+        if ($reset === '' || ! ctype_digit($reset)) {
+            return null;
+        }
+
+        return (new \DateTimeImmutable('@'.$reset))
+            ->setTimezone(new \DateTimeZone('UTC'))
+            ->format(\DateTimeInterface::ATOM);
     }
 }

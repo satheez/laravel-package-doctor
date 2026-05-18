@@ -4,6 +4,8 @@
 
 Default output is a console table. Columns:
 
+Interactive terminal runs show live progress before the table is rendered. Progress is disabled for JSON output, CI mode, and non-interactive output.
+
 | Column | Description |
 |---|---|
 | `Package` | Fully-qualified package name |

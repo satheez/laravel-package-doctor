@@ -95,6 +95,8 @@ Override `binary` if Composer is installed at a custom path. Increase `timeout_s
 
 Both sources are independent. Disable GitHub if you don't need archive detection or last-release dates.
 
+For large dependency graphs, set `PACKAGE_DOCTOR_GITHUB_TOKEN` and leave caching enabled. When GitHub rate limits a scan, Package Doctor skips further uncached GitHub calls for the rest of that run and reports one warning instead of repeating the same warning for every package.
+
 ---
 
 ## `cache`
