@@ -16,7 +16,8 @@ Interactive terminal runs show live progress while the scan is running. Progress
 |---|---|
 | `--json` | Output results as JSON instead of a console table |
 | `--ci` | Enable CI mode — returns a non-zero exit code on failures |
-| `--direct` | Include only direct dependencies (`require` + `require-dev`) |
+| `--all` | Scan full dependency tree including transitive packages |
+| `--direct` | Include only direct dependencies (`require`, no dev) |
 | `--no-dev` | Exclude `require-dev` packages |
 | `--no-cache` | Bypass the metadata cache for this run |
 | `--offline` | Skip Packagist and GitHub API calls |

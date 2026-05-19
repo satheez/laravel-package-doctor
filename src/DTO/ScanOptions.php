@@ -18,5 +18,6 @@ final readonly class ScanOptions
         /** @var list<string> */
         public array $packages,
         public bool $offline,
+        public bool $all = false,
     ) {}
 }

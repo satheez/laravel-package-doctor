@@ -233,9 +233,13 @@ final class PackageDoctor
                 return false;
             }
 
-            $includeDirect = $this->config['scan']['include_direct'] ?? true;
-            $includeDev = $this->config['scan']['include_dev'] ?? true;
-            $includeTransitive = $this->config['scan']['include_transitive'] ?? false;
+            if ($opts->all) {
+                $includeDirect = $includeDev = $includeTransitive = true;
+            } else {
+                $includeDirect = $this->config['scan']['include_direct'] ?? true;
+                $includeDev = $this->config['scan']['include_dev'] ?? true;
+                $includeTransitive = $this->config['scan']['include_transitive'] ?? false;
+            }
 
             if ($pkg->dependencyType === DependencyType::Direct && ! $includeDirect) {
                 return false;

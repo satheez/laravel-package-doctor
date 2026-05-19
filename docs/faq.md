@@ -124,12 +124,33 @@ Transitive dependency issues are real but lower-priority than direct dependency 
 
 ## Performance
 
+### Why does my scan miss Laravel's built-in transitive dependencies?
+
+By default, Package Doctor scans only the packages listed in your root `composer.json` (`require` + `require-dev`). Laravel apps typically have hundreds of transitive dependencies — scanning all of them exhausts GitHub's unauthenticated rate limit (60 requests/hour) and makes scans very slow.
+
+To scan the full dependency tree:
+
+```bash
+php artisan package:doctor --all
+```
+
+Or enable it permanently via the env var:
+
+```env
+PACKAGE_DOCTOR_INCLUDE_TRANSITIVE=true
+```
+
+Use `--direct` to go the other direction — only the packages you explicitly required, no dev dependencies either.
+
+---
+
 ### The scan is slow. How do I speed it up?
 
-1. **Disable GitHub collection** (the slowest part): `PACKAGE_DOCTOR_GITHUB_ENABLED=false`
-2. **Enable caching** (default is on): Repeated runs within an hour reuse cached Packagist and GitHub responses.
-3. **Scan direct deps only**: `--direct` skips transitive packages.
-4. **Use offline mode**: `--offline` skips all external HTTP.
+1. **Default scope** already excludes transitive packages — no change needed for most projects.
+2. **Disable GitHub collection** (the slowest part): `PACKAGE_DOCTOR_GITHUB_ENABLED=false`
+3. **Enable caching** (default is on): Repeated runs within an hour reuse cached Packagist and GitHub responses.
+4. **Scan direct deps only**: `--direct` skips dev and transitive packages.
+5. **Use offline mode**: `--offline` skips all external HTTP.
 
 ### Can I cache between CI runs?
 

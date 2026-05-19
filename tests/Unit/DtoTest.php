@@ -127,12 +127,14 @@ test('ScanOptions holds values', function (): void {
         safeOnly: false,
         packages: ['vendor/pkg'],
         offline: false,
+        all: true,
     );
 
     expect($opts->ci)->toBeTrue();
     expect($opts->direct)->toBeTrue();
     expect($opts->scoreBelow)->toBe(70);
     expect($opts->packages)->toBe(['vendor/pkg']);
+    expect($opts->all)->toBeTrue();
 });
 
 test('PackageHealthResult holds values', function (): void {

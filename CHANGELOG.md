@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - TBD
+
+### Added
+- `--all` flag: opt-in to scanning the full dependency tree including transitive packages.
+
+### Changed
+- **BREAKING:** `include_transitive` config default changed from `true` to `false`. Scans now cover direct + dev dependencies only by default. Pass `--all` or set `PACKAGE_DOCTOR_INCLUDE_TRANSITIVE=true` to restore the previous behaviour.
+
 ## [1.0.0] - TBD
 
 ### Added
