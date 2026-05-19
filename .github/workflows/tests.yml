@@ -20,7 +20,6 @@ jobs:
             testbench: '^10.0'
           - laravel: '13.*'
             testbench: '^11.0'
-            symfony_process: '^8.0'
         exclude:
           - php: '8.2'
             laravel: '13.*'
@@ -41,9 +40,6 @@ jobs:
       - name: Install dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update
-          if [ -n "${{ matrix.symfony_process }}" ]; then
-            composer require "symfony/process:${{ matrix.symfony_process }}" --no-update
-          fi
           composer update --prefer-dist --no-interaction --no-progress
 
       - name: Check code style
