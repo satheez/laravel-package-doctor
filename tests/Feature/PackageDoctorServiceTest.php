@@ -324,8 +324,8 @@ test('all flag includes transitive packages regardless of config', function (): 
     $reportAll = $doctor->analyze(makeServiceScanOptions(['all' => true]));
 
     $transitiveNames = array_map(
-        fn (\Satheez\PackageDoctor\DTO\PackageHealthResult $r): string => $r->package->name,
-        array_filter($reportAll->results, fn (\Satheez\PackageDoctor\DTO\PackageHealthResult $r): bool => $r->package->dependencyType->value === 'transitive'),
+        fn (PackageHealthResult $r): string => $r->package->name,
+        array_filter($reportAll->results, fn (PackageHealthResult $r): bool => $r->package->dependencyType->value === 'transitive'),
     );
 
     expect($transitiveNames)->not->toBeEmpty();
