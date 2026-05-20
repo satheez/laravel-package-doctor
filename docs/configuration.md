@@ -40,7 +40,7 @@ Paths to your project's Composer files. Override if your project layout is non-s
 'scan' => [
     'include_direct'     => true,
     'include_dev'        => env('PACKAGE_DOCTOR_INCLUDE_DEV', true),
-    'include_transitive' => env('PACKAGE_DOCTOR_INCLUDE_TRANSITIVE', true),
+    'include_transitive' => env('PACKAGE_DOCTOR_INCLUDE_TRANSITIVE', false),
     'exclude_packages'   => [],
     'only_packages'      => [],
 ],
@@ -50,7 +50,7 @@ Paths to your project's Composer files. Override if your project layout is non-s
 |---|---|---|
 | `include_direct` | `true` | Include direct dependencies |
 | `include_dev` | `true` | Include `require-dev` packages |
-| `include_transitive` | `true` | Include transitive (indirect) dependencies |
+| `include_transitive` | `false` | Include transitive (indirect) dependencies. Use `--all` CLI flag or set `PACKAGE_DOCTOR_INCLUDE_TRANSITIVE=true` to enable. |
 | `exclude_packages` | `[]` | Package names to exclude from the scan |
 | `only_packages` | `[]` | If set, scan only these packages |
 

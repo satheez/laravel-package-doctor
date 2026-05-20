@@ -23,6 +23,7 @@ final class PackageDoctorCommand extends Command
         {--no-dev : Exclude dev dependencies}
         {--no-cache : Bypass cache for external metadata}
         {--offline : Skip Packagist and GitHub metadata collection}
+        {--all : Scan the full dependency tree including transitive packages}
         {--score-below= : Only show packages with score below this value}
         {--major-only : Only show packages with a major upgrade available}
         {--safe-only : Only show packages with safe patch/minor upgrades and no critical issues}
@@ -106,6 +107,7 @@ final class PackageDoctorCommand extends Command
             safeOnly: (bool) $this->option('safe-only'),
             packages: array_values(array_map(strval(...), (array) $this->option('package'))),
             offline: (bool) $this->option('offline'),
+            all: (bool) $this->option('all'),
         );
     }
 

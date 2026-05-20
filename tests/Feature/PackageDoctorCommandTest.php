@@ -29,6 +29,11 @@ it('registers the package:doctor command', function (): void {
         ->toHaveKey('package:doctor');
 });
 
+it('accepts the --all flag without error', function (): void {
+    $this->artisan('package:doctor --offline --all')
+        ->assertExitCode(0);
+});
+
 it('returns exit code 3 for missing composer.json', function (): void {
     config(['package-doctor.project.composer_json_path' => '/nonexistent/composer.json']);
 

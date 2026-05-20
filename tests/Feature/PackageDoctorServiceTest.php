@@ -178,6 +178,7 @@ function makeServiceScanOptions(array $overrides = []): ScanOptions
         safeOnly: $overrides['safeOnly'] ?? false,
         packages: $overrides['packages'] ?? [],
         offline: $overrides['offline'] ?? false,
+        all: $overrides['all'] ?? false,
     );
 }
 
@@ -306,6 +307,29 @@ test('package filter limits to specified packages', function (): void {
 
     expect($report->results)->toHaveCount(1);
     expect($report->results[0]->package->name)->toBe('spatie/laravel-permission');
+});
+
+test('default scan excludes transitive packages', function (): void {
+    $doctor = makePackageDoctor(fixturesPath('composer/healthy-project'));
+    $report = $doctor->analyze(makeServiceScanOptions());
+
+    foreach ($report->results as $result) {
+        expect($result->package->dependencyType->value)->not->toBe('transitive');
+    }
+});
+
+test('all flag includes transitive packages regardless of config', function (): void {
+    $doctor = makePackageDoctor(fixturesPath('composer/healthy-project'));
+    $reportDefault = $doctor->analyze(makeServiceScanOptions());
+    $reportAll = $doctor->analyze(makeServiceScanOptions(['all' => true]));
+
+    $transitiveNames = array_map(
+        fn (PackageHealthResult $r): string => $r->package->name,
+        array_filter($reportAll->results, fn (PackageHealthResult $r): bool => $r->package->dependencyType->value === 'transitive'),
+    );
+
+    expect($transitiveNames)->not->toBeEmpty();
+    expect(count($reportAll->results))->toBeGreaterThan(count($reportDefault->results));
 });
 
 test('warnings are preserved in report', function (): void {

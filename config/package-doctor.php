@@ -30,7 +30,7 @@ return [
     'scan' => [
         'include_direct' => true,
         'include_dev' => env('PACKAGE_DOCTOR_INCLUDE_DEV', true),
-        'include_transitive' => env('PACKAGE_DOCTOR_INCLUDE_TRANSITIVE', true),
+        'include_transitive' => env('PACKAGE_DOCTOR_INCLUDE_TRANSITIVE', false),
         'exclude_packages' => [],
         'only_packages' => [],
     ],

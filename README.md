@@ -201,7 +201,8 @@ Summary
 
 | Command | Description |
 |---|---|
-| `php artisan package:doctor` | Full dependency health scan |
+| `php artisan package:doctor` | Scan direct + dev dependencies (no transitive) |
+| `php artisan package:doctor --all` | Scan full dependency tree including transitive packages |
 | `php artisan package:doctor --direct` | Direct dependencies only (great before a Laravel upgrade) |
 | `php artisan package:doctor --score-below=70` | Show only Watch, Risky, or Critical packages |
 | `php artisan package:doctor --no-dev --ci` | Production packages, gate on CI |
@@ -319,6 +320,8 @@ PACKAGE_DOCTOR_GITHUB_TOKEN=ghp_your_token_here
 
 If GitHub reports a rate limit during a scan, Package Doctor skips further uncached GitHub calls for the rest of that run, keeps using cached metadata, and includes a single warning in the final report. Keep caching enabled, use `--direct` for focused scans, or set `PACKAGE_DOCTOR_GITHUB_ENABLED=false` when GitHub metadata is not needed.
 
+> **Tip — avoiding rate limits:** By default, Package Doctor scans your direct and dev dependencies only (no transitive packages). Laravel apps can have hundreds of transitive dependencies, so use `--all` deliberately when you need full tree coverage.
+
 ---
 
 ## Practical Use Cases
@@ -337,9 +340,9 @@ Fail the deploy pipeline if any production package is Critical.
 
 **Audit an inherited project**
 ```bash
-php artisan package:doctor
+php artisan package:doctor --all
 ```
-Get an immediate picture of abandoned, outdated, and incompatible dependencies in a project you're taking over.
+Get a picture of every dependency — including transitive packages — in a project you're taking over.
 
 **Weekly health check**
 ```bash
