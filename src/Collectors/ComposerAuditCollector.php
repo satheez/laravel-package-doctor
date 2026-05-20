@@ -6,6 +6,7 @@ namespace Satheez\PackageDoctor\Collectors;
 
 use Satheez\PackageDoctor\Exceptions\ComposerCommandFailedException;
 use Satheez\PackageDoctor\Support\Contracts\ComposerProcessContract;
+use Satheez\PackageDoctor\Support\Contracts\TickableComposerProcessContract;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 
 final readonly class ComposerAuditCollector
@@ -17,9 +18,10 @@ final readonly class ComposerAuditCollector
     ) {}
 
     /**
+     * @param  null|callable(): void  $tick
      * @return array<string, array{advisories: list<array<string,mixed>>, abandoned: bool, replacement: string|null}>
      */
-    public function collect(string $workingDir): array
+    public function collect(string $workingDir, ?callable $tick = null): array
     {
         if (! ($this->config['composer']['commands']['audit']['enabled'] ?? true)) {
             return [];
@@ -28,7 +30,9 @@ final readonly class ComposerAuditCollector
         $arguments = ['audit', '--format=json', '--locked'];
 
         try {
-            $result = $this->process->run($arguments, $workingDir);
+            $result = $this->process instanceof TickableComposerProcessContract
+                ? $this->process->runWithTicks($arguments, $workingDir, $tick)
+                : $this->process->run($arguments, $workingDir);
 
             $data = json_decode($result->stdout, true);
 

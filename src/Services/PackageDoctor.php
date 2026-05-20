@@ -119,9 +119,19 @@ final class PackageDoctor
 
         $this->reportProgress($progress, 'collecting_composer_metadata', 'Collecting Composer metadata');
 
-        $outdated = $opts->offline ? [] : $this->outdatedCollector->collect($opts, $workingDir);
-        $audit = $opts->offline ? [] : $this->auditCollector->collect($workingDir);
-        $licenses = $opts->offline ? [] : $this->licenseCollector->collect($workingDir);
+        $metadataTick = $progress === null
+            ? null
+            : function () use ($progress): void {
+                $this->reportProgress(
+                    $progress,
+                    'collecting_composer_metadata',
+                    'Collecting Composer metadata',
+                );
+            };
+
+        $outdated = $opts->offline ? [] : $this->outdatedCollector->collect($opts, $workingDir, $metadataTick);
+        $audit = $opts->offline ? [] : $this->auditCollector->collect($workingDir, $metadataTick);
+        $licenses = $opts->offline ? [] : $this->licenseCollector->collect($workingDir, $metadataTick);
 
         $results = [];
         $totalPackages = count($packages);

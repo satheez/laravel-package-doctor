@@ -26,6 +26,7 @@ use Satheez\PackageDoctor\Scoring\PackageScoreCalculator;
 use Satheez\PackageDoctor\Scoring\RecommendationGenerator;
 use Satheez\PackageDoctor\Services\PackageDoctor;
 use Satheez\PackageDoctor\Support\Contracts\ComposerProcessContract;
+use Satheez\PackageDoctor\Support\Contracts\TickableComposerProcessContract;
 use Satheez\PackageDoctor\Support\RepositoryUrlParser;
 use Satheez\PackageDoctor\Support\VersionComparator;
 
@@ -36,7 +37,7 @@ function fixturesPath(string $relative = ''): string
 
 function makeComposerProcess(array $outdatedData, array $auditData, array $licenseData): ComposerProcessContract
 {
-    return new class($outdatedData, $auditData, $licenseData) implements ComposerProcessContract
+    return new class($outdatedData, $auditData, $licenseData) implements TickableComposerProcessContract
     {
         public function __construct(
             private readonly array $outdatedData,
@@ -55,6 +56,15 @@ function makeComposerProcess(array $outdatedData, array $auditData, array $licen
             );
         }
 
+        public function runWithTicks(array $arguments, string $cwd, ?callable $tick = null): ProcessResult
+        {
+            if ($tick !== null) {
+                $tick();
+            }
+
+            return $this->run($arguments, $cwd);
+        }
+
         public function runJson(array $arguments, string $cwd): array
         {
             if (in_array('outdated', $arguments, true)) {
@@ -66,6 +76,15 @@ function makeComposerProcess(array $outdatedData, array $auditData, array $licen
             }
 
             return $this->auditData;
+        }
+
+        public function runJsonWithTicks(array $arguments, string $cwd, ?callable $tick = null): array
+        {
+            if ($tick !== null) {
+                $tick();
+            }
+
+            return $this->runJson($arguments, $cwd);
         }
     };
 }
@@ -234,6 +253,27 @@ test('analyze emits progress updates while scanning packages', function (): void
     expect($packageEvents)->not->toBeEmpty();
     expect($packageEvents[0]->current)->toBe(1);
     expect($packageEvents[0]->total)->toBe(count($report->results));
+});
+
+test('metadata collection emits heartbeat progress while composer commands run', function (): void {
+    $doctor = makePackageDoctor(fixturesPath('composer/healthy-project'));
+    $events = [];
+
+    $doctor->analyze(
+        makeServiceScanOptions(),
+        function (ScanProgress $progress) use (&$events): void {
+            $events[] = $progress;
+        },
+    );
+
+    $metadataEvents = array_values(array_filter(
+        $events,
+        fn (ScanProgress $progress): bool => $progress->stage === 'collecting_composer_metadata',
+    ));
+
+    expect($metadataEvents)->toHaveCount(4);
+    expect($metadataEvents[0]->message)->toBe('Collecting Composer metadata');
+    expect($metadataEvents[3]->message)->toBe('Collecting Composer metadata');
 });
 
 test('offline mode skips packagist and github and returns results', function (): void {

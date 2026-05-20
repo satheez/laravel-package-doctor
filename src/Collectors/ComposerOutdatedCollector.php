@@ -7,6 +7,7 @@ namespace Satheez\PackageDoctor\Collectors;
 use Satheez\PackageDoctor\DTO\ScanOptions;
 use Satheez\PackageDoctor\Exceptions\ComposerCommandFailedException;
 use Satheez\PackageDoctor\Support\Contracts\ComposerProcessContract;
+use Satheez\PackageDoctor\Support\Contracts\TickableComposerProcessContract;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 
 final readonly class ComposerOutdatedCollector
@@ -17,8 +18,11 @@ final readonly class ComposerOutdatedCollector
         private array $config,
     ) {}
 
-    /** @return array<string, array{current: string, latest: string, latest-status: string}> */
-    public function collect(ScanOptions $opts, string $workingDir): array
+    /**
+     * @param  null|callable(): void  $tick
+     * @return array<string, array{current: string, latest: string, latest-status: string}>
+     */
+    public function collect(ScanOptions $opts, string $workingDir, ?callable $tick = null): array
     {
         if (! ($this->config['composer']['commands']['outdated']['enabled'] ?? true)) {
             return [];
@@ -35,7 +39,9 @@ final readonly class ComposerOutdatedCollector
         }
 
         try {
-            $data = $this->process->runJson($arguments, $workingDir);
+            $data = $this->process instanceof TickableComposerProcessContract
+                ? $this->process->runJsonWithTicks($arguments, $workingDir, $tick)
+                : $this->process->runJson($arguments, $workingDir);
         } catch (ProcessTimedOutException|ComposerCommandFailedException) {
             return [];
         }

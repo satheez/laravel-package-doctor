@@ -21,3 +21,20 @@ test('ComposerProcess runJson throws on invalid JSON output', function (): void 
     expect(fn (): array => $process->runJson(['not-json'], sys_get_temp_dir()))
         ->toThrow(ComposerCommandFailedException::class);
 });
+
+test('ComposerProcess invokes tick callback while command is running', function (): void {
+    $ticks = 0;
+    $process = new ComposerProcess(PHP_BINARY, 30);
+
+    $result = $process->runWithTicks(
+        ['-r', 'usleep(250000); echo "ok";'],
+        sys_get_temp_dir(),
+        function () use (&$ticks): void {
+            $ticks++;
+        },
+    );
+
+    expect($result->successful)->toBeTrue();
+    expect(trim($result->stdout))->toBe('ok');
+    expect($ticks)->toBeGreaterThan(0);
+});

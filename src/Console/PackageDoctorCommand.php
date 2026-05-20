@@ -41,21 +41,27 @@ final class PackageDoctorCommand extends Command
             $opts = $this->buildScanOptions();
             $progressIndicator = $this->makeProgressIndicator($opts);
             $progressStarted = false;
+            $currentProgressMessage = null;
 
             $report = $doctor->analyze(
                 $opts,
                 $progressIndicator instanceof ProgressIndicator
-                    ? function (ScanProgress $progress) use ($progressIndicator, &$progressStarted): void {
+                    ? function (ScanProgress $progress) use ($progressIndicator, &$progressStarted, &$currentProgressMessage): void {
                         $message = $this->formatProgressMessage($progress);
 
                         if (! $progressStarted) {
                             $progressIndicator->start($message);
                             $progressStarted = true;
+                            $currentProgressMessage = $message;
 
                             return;
                         }
 
-                        $progressIndicator->setMessage($message);
+                        if ($message !== $currentProgressMessage) {
+                            $progressIndicator->setMessage($message);
+                            $currentProgressMessage = $message;
+                        }
+
                         $progressIndicator->advance();
                     }
                 : null,
