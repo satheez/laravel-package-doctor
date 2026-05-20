@@ -126,6 +126,8 @@ final class PackageDoctor
         $results = [];
         $totalPackages = count($packages);
 
+        $this->githubCollector->checkRateLimitCapacity($totalPackages, $opts->offline);
+
         foreach ($packages as $index => $package) {
             $this->reportProgress(
                 $progress,
@@ -368,7 +370,10 @@ final class PackageDoctor
                 if (! $opts->offline && ($this->config['metadata']['github']['enabled'] ?? true)) {
                     try {
                         $githubData = $this->githubCollector->fetchRepository($githubOwner, $githubRepo, $opts->offline, $opts->noCache);
-                        $githubRelease = $this->githubCollector->fetchLatestRelease($githubOwner, $githubRepo, $opts->offline, $opts->noCache);
+
+                        if (! isset($packagistData['latestReleaseAt'])) {
+                            $githubRelease = $this->githubCollector->fetchLatestRelease($githubOwner, $githubRepo, $opts->offline, $opts->noCache);
+                        }
                     } catch (Throwable $e) {
                         $this->warnings[] = "Could not fetch GitHub data for {$package->name}: ".$e->getMessage();
                     }
@@ -381,7 +386,12 @@ final class PackageDoctor
         }
 
         $latestReleaseAt = null;
-        if (isset($githubRelease['published_at'])) {
+        if (isset($packagistData['latestReleaseAt'])) {
+            try {
+                $latestReleaseAt = new \DateTimeImmutable($packagistData['latestReleaseAt']);
+            } catch (Throwable) {
+            }
+        } elseif (isset($githubRelease['published_at'])) {
             try {
                 $latestReleaseAt = new \DateTimeImmutable($githubRelease['published_at']);
             } catch (Throwable) {
@@ -408,8 +418,8 @@ final class PackageDoctor
             repositoryUrl: $packagistData['repositoryUrl'] ?? null,
             githubOwner: $githubOwner,
             githubRepo: $githubRepo,
-            githubStars: $githubData['stargazers_count'] ?? null,
-            githubOpenIssues: $githubData['open_issues_count'] ?? null,
+            githubStars: $githubData['stargazers_count'] ?? $packagistData['githubStars'] ?? null,
+            githubOpenIssues: $githubData['open_issues_count'] ?? $packagistData['githubOpenIssues'] ?? null,
             githubArchived: $githubData['archived'] ?? null,
             githubPushedAt: $githubPushedAt,
             latestReleaseAt: $latestReleaseAt,

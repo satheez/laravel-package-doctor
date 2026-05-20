@@ -12,13 +12,17 @@ No. There is no database dependency in v1. All data comes from local Composer fi
 
 ### Do I need a GitHub token?
 
-No. GitHub metadata collection is optional. Without a token, GitHub API requests use the unauthenticated rate limit (60 requests per hour per IP). For CI environments with many concurrent runs, add a token:
+No. Package Doctor optimizes API calls by pulling most metadata (stars, open issues, release dates) directly from Packagist. Without a token, GitHub API requests use the unauthenticated rate limit (60 requests per hour per IP).
+
+Before scanning, Package Doctor checks your remaining GitHub rate limit. If it detects that a full scan would exceed the limit (e.g., scanning 63 packages with only 56 requests remaining), it automatically falls back to Packagist-only data to ensure the scan completes successfully without crashing. It prints a helpful warning:
+
+`⚠ GitHub API limit is too low for this scan (56 remaining, 63 required). Using Packagist metadata only.`
+
+For CI environments with many concurrent runs, or to enable richer analysis (like checking for `archived` repositories), add a personal access token:
 
 ```env
 PACKAGE_DOCTOR_GITHUB_TOKEN=ghp_your_token_here
 ```
-
-If GitHub reports a rate limit, Package Doctor stops making further uncached GitHub calls for that run, keeps cached GitHub metadata available, and prints one warning in the final report.
 
 Or disable GitHub collection entirely:
 

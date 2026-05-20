@@ -55,6 +55,9 @@ test('packagist collector fetches and parses metadata', function (): void {
     expect($result['downloads'])->toBe(50000000);
     expect($result['license'])->toBe('MIT');
     expect($result['repositoryUrl'])->toBe('https://github.com/spatie/laravel-permission');
+    expect($result['githubStars'])->toBe(12000);
+    expect($result['githubOpenIssues'])->toBe(50);
+    expect($result['latestReleaseAt'])->toBe('2024-01-01T00:00:00+00:00');
 });
 
 test('packagist collector returns null in offline mode', function (): void {

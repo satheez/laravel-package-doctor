@@ -81,9 +81,11 @@ final readonly class PackagistCollector
         $latestStable = $this->resolveLatestStable($versions);
 
         $license = null;
-        if ($latestStable !== null && isset($versions[$latestStable]['license'])) {
-            $lics = $versions[$latestStable]['license'];
+        $latestReleaseAt = null;
+        if ($latestStable !== null && isset($versions[$latestStable])) {
+            $lics = $versions[$latestStable]['license'] ?? null;
             $license = is_array($lics) ? implode(', ', $lics) : $lics;
+            $latestReleaseAt = $versions[$latestStable]['time'] ?? null;
         }
 
         $repositoryUrl = $package['repository'] ?? null;
@@ -94,11 +96,14 @@ final readonly class PackagistCollector
             'name' => $package['name'] ?? null,
             'description' => $package['description'] ?? null,
             'latestVersion' => $latestStable,
+            'latestReleaseAt' => $latestReleaseAt,
             'isAbandoned' => $abandoned !== false,
             'replacementPackage' => $replacedBy,
             'downloads' => $package['downloads']['total'] ?? null,
             'license' => $license,
             'repositoryUrl' => $repositoryUrl,
+            'githubStars' => $package['github_stars'] ?? null,
+            'githubOpenIssues' => $package['github_open_issues'] ?? null,
         ];
     }
 
