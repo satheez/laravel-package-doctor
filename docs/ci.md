@@ -155,4 +155,4 @@ PACKAGE_DOCTOR_GITHUB_ENABLED=false php artisan package:doctor --ci
 
 Or use the cache. It defaults to 3600 seconds, so repeated CI runs within an hour reuse cached Packagist and GitHub responses.
 
-For larger projects, set `PACKAGE_DOCTOR_GITHUB_TOKEN` in CI. If GitHub reports a rate limit, Package Doctor skips further uncached GitHub calls for that run and leaves the rest of the scan intact.
+For larger projects, set `PACKAGE_DOCTOR_GITHUB_TOKEN` in CI. Before scanning, Package Doctor checks your remaining GitHub rate limit. If it detects a full scan would exceed the limit, it automatically disables GitHub calls for that run, falls back to Packagist metadata, and prints a single warning.

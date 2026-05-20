@@ -21,5 +21,7 @@ final readonly class PackageHealthResult
         /** @var list<PackageIssue> */
         public array $issues,
         public PackageRecommendation $recommendation,
+        public ?string $changelogUrl = null,
+        public ?string $replacementPackage = null,
     ) {}
 }

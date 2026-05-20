@@ -27,6 +27,7 @@ test('PackageStatus has correct values', function (): void {
     expect(PackageStatus::Watch->value)->toBe('watch');
     expect(PackageStatus::Risky->value)->toBe('risky');
     expect(PackageStatus::Critical->value)->toBe('critical');
+    expect(PackageStatus::Ignored->value)->toBe('ignored');
 });
 
 test('PackageStatus::fromScore maps correctly', function (): void {

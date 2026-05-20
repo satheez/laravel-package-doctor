@@ -230,3 +230,40 @@ test('uses cache on second call', function (): void {
     expect($result1)->not->toBeNull();
     expect($result2)->toEqual($result1);
 });
+
+test('checkRateLimitCapacity returns true when sufficient', function (): void {
+    $client = makeGitHubClient([
+        new Response(200, [], json_encode(['resources' => ['core' => ['remaining' => 50]]])),
+    ]);
+
+    $collector = new GitHubCollector($client, makeGitHubCache(), makeGitHubConfig());
+    $result = $collector->checkRateLimitCapacity(30, offline: false);
+
+    expect($result)->toBeTrue();
+    expect($collector->warnings())->toBeEmpty();
+});
+
+test('checkRateLimitCapacity returns false and warns when insufficient', function (): void {
+    $client = makeGitHubClient([
+        new Response(200, [], json_encode(['resources' => ['core' => ['remaining' => 10, 'reset' => 1735689600]]])),
+    ]);
+
+    $collector = new GitHubCollector($client, makeGitHubCache(), makeGitHubConfig());
+    $result = $collector->checkRateLimitCapacity(30, offline: false);
+
+    expect($result)->toBeFalse();
+    expect($collector->warnings())->toHaveCount(1);
+    expect($collector->warnings()[0])->toContain('GitHub API limit is too low');
+    expect($collector->warnings()[0])->toContain('10 remaining');
+    expect($collector->warnings()[0])->toContain('30 required');
+    expect($collector->warnings()[0])->toContain('resets at 2025-01-01T00:00:00+00:00');
+});
+
+test('checkRateLimitCapacity returns false when offline or disabled', function (): void {
+    $client = makeGitHubClient([]);
+
+    $collector = new GitHubCollector($client, makeGitHubCache(), makeGitHubConfig());
+    $result = $collector->checkRateLimitCapacity(30, offline: true);
+
+    expect($result)->toBeFalse();
+});

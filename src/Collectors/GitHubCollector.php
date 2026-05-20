@@ -31,6 +31,35 @@ final class GitHubCollector
         $this->rateLimited = false;
     }
 
+    public function checkRateLimitCapacity(int $requiredRequests, bool $offline): bool
+    {
+        if (! $this->isEnabled($offline)) {
+            return false;
+        }
+
+        if ($this->rateLimited) {
+            return false;
+        }
+
+        $data = $this->get('/rate_limit');
+
+        if ($data === null || ! isset($data['resources']['core']['remaining'])) {
+            return true;
+        }
+
+        $remaining = (int) $data['resources']['core']['remaining'];
+
+        if ($remaining < $requiredRequests) {
+            $this->rateLimited = true;
+            $resetTs = $data['resources']['core']['reset'] ?? null;
+            $this->addPreScanRateLimitWarning($remaining, $requiredRequests, $resetTs);
+
+            return false;
+        }
+
+        return true;
+    }
+
     /** @return array<string, mixed>|null */
     public function fetchRepository(string $owner, string $repo, bool $offline, bool $noCache): ?array
     {
@@ -176,6 +205,20 @@ final class GitHubCollector
         $resetAt = $this->resetAt($response);
 
         if ($resetAt !== null) {
+            $warning .= " Limit resets at {$resetAt}.";
+        }
+
+        $this->warnings[] = $warning;
+    }
+
+    private function addPreScanRateLimitWarning(int $remaining, int $required, ?int $resetTs): void
+    {
+        $warning = "GitHub API limit is too low for this scan ({$remaining} remaining, {$required} required). Using Packagist metadata only. Tip: Set PACKAGE_DOCTOR_GITHUB_TOKEN for richer analysis.";
+
+        if ($resetTs !== null) {
+            $resetAt = (new \DateTimeImmutable('@'.$resetTs))
+                ->setTimezone(new \DateTimeZone('UTC'))
+                ->format(\DateTimeInterface::ATOM);
             $warning .= " Limit resets at {$resetAt}.";
         }
 

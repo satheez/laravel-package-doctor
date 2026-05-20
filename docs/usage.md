@@ -8,13 +8,15 @@ php artisan package:doctor
 
 Scans all packages in `composer.lock` and prints a console health report.
 
-Interactive terminal runs show live progress while the scan is running. Progress is hidden for `--json`, `--ci`, and non-interactive output so automation receives only the final report.
+Interactive terminal runs show live progress while the scan is running. Progress is hidden for JSON output, CSV output, `--ci`, and non-interactive output so automation receives only the final report.
 
 ## All Options
 
 | Option | Description |
 |---|---|
 | `--json` | Output results as JSON instead of a console table |
+| `--format=table|json|csv` | Select the output format; defaults to `table` |
+| `--output=path` | Write JSON or CSV output to a file instead of stdout |
 | `--ci` | Enable CI mode — returns a non-zero exit code on failures |
 | `--all` | Scan full dependency tree including transitive packages |
 | `--direct` | Include only direct dependencies (`require`, no dev) |
@@ -72,10 +74,34 @@ php artisan package:doctor --package=spatie/laravel-permission --package=barryvd
 php artisan package:doctor --json
 ```
 
+The explicit format option is equivalent:
+
+```bash
+php artisan package:doctor --format=json
+```
+
 Pipe to `jq` for filtering:
 
 ```bash
 php artisan package:doctor --json | jq '.packages[] | select(.status == "critical")'
+```
+
+Write the JSON report to a file:
+
+```bash
+php artisan package:doctor --format=json --output=package-health.json
+```
+
+### CSV report for spreadsheets
+
+```bash
+php artisan package:doctor --format=csv
+```
+
+Write the CSV report to a file:
+
+```bash
+php artisan package:doctor --format=csv --output=package-health.csv
 ```
 
 ### CI gate — fail on critical packages
@@ -123,6 +149,9 @@ Options can be combined freely:
 ```bash
 # Show critical production packages as JSON with fresh data
 php artisan package:doctor --no-dev --score-below=40 --no-cache --json
+
+# Export safe production upgrade candidates to CSV
+php artisan package:doctor --no-dev --safe-only --format=csv --output=safe-upgrades.csv
 
 # CI gate on direct deps only, skip GitHub for speed
 PACKAGE_DOCTOR_GITHUB_ENABLED=false php artisan package:doctor --direct --ci

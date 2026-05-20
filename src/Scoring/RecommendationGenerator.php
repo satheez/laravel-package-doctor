@@ -32,6 +32,7 @@ final class RecommendationGenerator
         PackageStatus $status,
         UpgradeType $upgradeType,
         bool $constraintBlocked,
+        ?string $changelogUrl = null,
     ): PackageRecommendation {
         $codes = array_map(fn (PackageIssue $i): string => $i->code, $issues);
 
@@ -82,9 +83,14 @@ final class RecommendationGenerator
         }
 
         if ($upgradeType === UpgradeType::Major) {
+            $msg = 'Review the changelog before upgrading — a major version is available.';
+            if ($changelogUrl !== null) {
+                $msg = "Review the changelog at {$changelogUrl} before upgrading — a major version is available.";
+            }
+
             return new PackageRecommendation(
                 type: RecommendationType::ReviewBeforeUpgrade,
-                message: 'Review the changelog before upgrading — a major version is available.',
+                message: $msg,
             );
         }
 

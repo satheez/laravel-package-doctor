@@ -30,14 +30,28 @@ final class ConsoleReportRenderer
 
         $output->writeln('');
         $output->writeln('<info>Summary</info>');
-        $output->writeln(sprintf('  Project score: <comment>%d/100</comment>', $report->summary['project_score'] ?? 0));
+        $projectScore = (int) ($report->summary['project_score'] ?? 0);
+        $scoreStr = (string) $projectScore;
+        if (isset($report->summary['previous_score'])) {
+            $diff = $projectScore - (int) $report->summary['previous_score'];
+            if ($diff > 0) {
+                $scoreStr .= sprintf(' (<fg=green>↑ +%d</>)', $diff);
+            } elseif ($diff < 0) {
+                $scoreStr .= sprintf(' (<fg=red>↓ %d</>)', $diff);
+            } else {
+                $scoreStr .= ' (± 0)';
+            }
+        }
+
+        $output->writeln(sprintf('  Project score: <comment>%s/100</comment>', $scoreStr));
         $output->writeln(sprintf('  Packages scanned: <comment>%d</comment>', $report->summary['total_packages'] ?? 0));
         $output->writeln(sprintf(
-            '  Healthy: <info>%d</info>  Watch: <comment>%d</comment>  Risky: <fg=red>%d</>  Critical: <fg=red>%d</>',
+            '  Healthy: <info>%d</info>  Watch: <comment>%d</comment>  Risky: <fg=red>%d</>  Critical: <fg=red>%d</>  Ignored: <fg=gray>%d</>',
             $report->summary['healthy_count'] ?? 0,
             $report->summary['watch_count'] ?? 0,
             $report->summary['risky_count'] ?? 0,
             $report->summary['critical_count'] ?? 0,
+            $report->summary['ignored_count'] ?? 0,
         ));
         $output->writeln('');
 
@@ -63,6 +77,7 @@ final class ConsoleReportRenderer
                 PackageStatus::Watch => '<comment>Watch</comment>',
                 PackageStatus::Risky => '<fg=red>Risky</>',
                 PackageStatus::Critical => '<fg=red;options=bold>Critical</>',
+                PackageStatus::Ignored => '<fg=gray>Ignored</>',
             };
 
             $table->addRow([
@@ -70,9 +85,9 @@ final class ConsoleReportRenderer
                 $result->package->version,
                 $result->latestVersion ?? '-',
                 $result->upgradeType->value,
-                $result->score,
+                $result->status === PackageStatus::Ignored ? '-' : $result->score,
                 $statusLabel,
-                $this->truncate($result->recommendation->message, 40),
+                $this->truncate($result->recommendation->message, 80),
             ]);
 
             $issuesToShow = array_slice($result->issues, 0, $maxIssues);

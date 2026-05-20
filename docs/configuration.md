@@ -95,7 +95,7 @@ Override `binary` if Composer is installed at a custom path. Increase `timeout_s
 
 Both sources are independent. Disable GitHub if you don't need archive detection or last-release dates.
 
-For large dependency graphs, set `PACKAGE_DOCTOR_GITHUB_TOKEN` and leave caching enabled. When GitHub rate limits a scan, Package Doctor skips further uncached GitHub calls for the rest of that run and reports one warning instead of repeating the same warning for every package.
+For large dependency graphs, set `PACKAGE_DOCTOR_GITHUB_TOKEN` and leave caching enabled. Before scanning, Package Doctor checks your remaining GitHub rate limit. If it detects a full scan would exceed the limit, it automatically disables GitHub calls for that run, falls back to Packagist metadata, and prints a single warning.
 
 ---
 
@@ -237,7 +237,9 @@ Active only when `--ci` flag is passed. Valid statuses for `fail_on_statuses`: `
 ],
 ```
 
-Silence known false positives. Use `ignore.packages` to skip a package entirely, or `ignore.issues` to suppress specific issue codes for a specific package.
+Silence known false positives. Use `ignore.packages` to mark a package as reviewed, or `ignore.issues` to suppress specific issue codes for a specific package.
+
+Packages listed in `ignore.packages` remain visible in console and JSON output with an `ignored` status and the configured reason. Ignored packages are excluded from the weighted project score calculation.
 
 Example:
 

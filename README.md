@@ -131,14 +131,19 @@ These tools are complementary. Package Doctor composes the data `composer outdat
 - Status classification: Healthy, Watch, Risky, Critical
 - One actionable recommendation per package
 - Overall project health score
+- Package ignore reasons that keep reviewed packages visible without affecting the project score
+- Suggested replacements for abandoned packages when Composer or Packagist provides one
+- Changelog links for major-upgrade recommendations when GitHub metadata is available
 
 **Output**
 - Readable console table with issue details
 - Realtime terminal progress while scans are running
-- Machine-readable JSON output (`--json`)
+- Machine-readable JSON and CSV output (`--json`, `--format=json`, `--format=csv`)
+- JSON and CSV file exports via `--output=path`
 - Structured exit codes for CI (`--ci`)
 - Offline mode that skips external API calls (`--offline`)
 - Metadata caching to reduce API calls on repeated runs
+- Project score trend indicators from the previous scan
 
 ---
 
@@ -164,7 +169,7 @@ php artisan vendor:publish --tag=package-doctor-config
 php artisan package:doctor
 ```
 
-Normal terminal runs show live scan progress while Composer, Packagist, and GitHub metadata are collected. Progress output is suppressed for `--json`, `--ci`, and non-interactive output so scripts can safely parse the final report.
+Normal terminal runs show live scan progress while Composer, Packagist, and GitHub metadata are collected. Progress output is suppressed for JSON, CSV, CI, and non-interactive output so scripts can safely parse the final report.
 
 Example output:
 
@@ -174,9 +179,9 @@ Laravel Package Doctor
 PHP: 8.3.12  Laravel: 12.5.0
 
 Summary
-  Project score: 78/100
+  Project score: 78 (↑ +3)/100
   Packages scanned: 42
-  Healthy: 31  Watch: 6  Risky: 4  Critical: 1
+  Healthy: 31  Watch: 6  Risky: 4  Critical: 1  Ignored: 0
 
  ------------------------------- --------- --------- ------- ----- ---------- ---------------------------
   Package                         Current   Latest    Upgrade Score  Status     Recommendation
@@ -207,6 +212,9 @@ Summary
 | `php artisan package:doctor --score-below=70` | Show only Watch, Risky, or Critical packages |
 | `php artisan package:doctor --no-dev --ci` | Production packages, gate on CI |
 | `php artisan package:doctor --json` | Machine-readable JSON output |
+| `php artisan package:doctor --format=csv` | Spreadsheet-friendly CSV output |
+| `php artisan package:doctor --format=json --output=package-health.json` | Write a JSON report file |
+| `php artisan package:doctor --format=csv --output=package-health.csv` | Write a CSV report file |
 | `php artisan package:doctor --offline` | Skip external API calls |
 
 All available options → [docs/usage.md](docs/usage.md)
@@ -298,6 +306,8 @@ return [
 
 Full config reference → [docs/configuration.md](docs/configuration.md)
 
+Ignored packages remain visible in the report with an `Ignored` status and the configured reason. They are excluded from the project score so known, reviewed exceptions do not inflate or reduce the health score.
+
 ---
 
 ## Offline Mode
@@ -321,6 +331,10 @@ PACKAGE_DOCTOR_GITHUB_TOKEN=ghp_your_token_here
 If GitHub reports a rate limit during a scan, Package Doctor skips further uncached GitHub calls for the rest of that run, keeps using cached metadata, and includes a single warning in the final report. Keep caching enabled, use `--direct` for focused scans, or set `PACKAGE_DOCTOR_GITHUB_ENABLED=false` when GitHub metadata is not needed.
 
 > **Tip — avoiding rate limits:** By default, Package Doctor scans your direct and dev dependencies only (no transitive packages). Laravel apps can have hundreds of transitive dependencies, so use `--all` deliberately when you need full tree coverage.
+
+## Trend History
+
+Each scan writes the latest summary to `storage/app/package-doctor-history.json` when Laravel's storage directory is available. If not, it writes `.package-doctor-history.json` in the project base path. The next scan uses that file to show the previous project score and a trend indicator beside the current score.
 
 ---
 

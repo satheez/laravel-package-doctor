@@ -24,5 +24,6 @@ final readonly class PackageMetadata
         public ?\DateTimeImmutable $githubPushedAt,
         public ?\DateTimeImmutable $latestReleaseAt,
         public ?string $documentationUrl,
+        public ?string $changelogUrl = null,
     ) {}
 }

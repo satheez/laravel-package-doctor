@@ -39,9 +39,19 @@ Note: `no_release_12_months` and `no_release_18_months` are mutually exclusive �
 | 40–69 | **Risky** | Needs review before future upgrades or new dependencies |
 | 0–39 | **Critical** | Should be updated, replaced, or investigated soon |
 
+`Ignored` is a configured status, not a score threshold. Packages listed in `ignore.packages` are shown as ignored with a score placeholder in console output.
+
 ## Project Score
 
-The overall project score is the mean of all scanned package scores. It appears in the console summary and the JSON output under `summary.project_score`.
+The overall project score is a weighted mean of scanned package scores:
+
+| Dependency type | Weight |
+|---|---:|
+| Direct | `1.0` |
+| Dev | `0.7` |
+| Transitive | `0.4` |
+
+Ignored packages are excluded from this calculation. The result appears in the console summary and the JSON output under `summary.project_score`.
 
 ## Freshness Thresholds
 

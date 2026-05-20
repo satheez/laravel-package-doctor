@@ -19,6 +19,7 @@ use Satheez\PackageDoctor\Compatibility\PhpCompatibilityChecker;
 use Satheez\PackageDoctor\Console\PackageDoctorCommand;
 use Satheez\PackageDoctor\Output\CiExitCodeResolver;
 use Satheez\PackageDoctor\Output\ConsoleReportRenderer;
+use Satheez\PackageDoctor\Output\CsvReportRenderer;
 use Satheez\PackageDoctor\Output\JsonReportRenderer;
 use Satheez\PackageDoctor\Readers\ComposerJsonReader;
 use Satheez\PackageDoctor\Readers\ComposerLockReader;
@@ -78,6 +79,7 @@ final class PackageDoctorServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(JsonReportRenderer::class, fn (): JsonReportRenderer => new JsonReportRenderer);
+        $this->app->singleton(CsvReportRenderer::class, fn (): CsvReportRenderer => new CsvReportRenderer);
         $this->app->singleton(ConsoleReportRenderer::class, fn (): ConsoleReportRenderer => new ConsoleReportRenderer);
         $this->app->singleton(CiExitCodeResolver::class, fn (): CiExitCodeResolver => new CiExitCodeResolver);
     }

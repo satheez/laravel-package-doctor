@@ -6,6 +6,7 @@ namespace Satheez\PackageDoctor\Collectors;
 
 use Satheez\PackageDoctor\Exceptions\ComposerCommandFailedException;
 use Satheez\PackageDoctor\Support\Contracts\ComposerProcessContract;
+use Satheez\PackageDoctor\Support\Contracts\TickableComposerProcessContract;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 
 final readonly class ComposerLicenseCollector
@@ -16,8 +17,11 @@ final readonly class ComposerLicenseCollector
         private array $config,
     ) {}
 
-    /** @return array<string, string|null> */
-    public function collect(string $workingDir): array
+    /**
+     * @param  null|callable(): void  $tick
+     * @return array<string, string|null>
+     */
+    public function collect(string $workingDir, ?callable $tick = null): array
     {
         if (! ($this->config['composer']['commands']['licenses']['enabled'] ?? true)) {
             return [];
@@ -26,7 +30,9 @@ final readonly class ComposerLicenseCollector
         $arguments = ['licenses', '--format=json'];
 
         try {
-            $data = $this->process->runJson($arguments, $workingDir);
+            $data = $this->process instanceof TickableComposerProcessContract
+                ? $this->process->runJsonWithTicks($arguments, $workingDir, $tick)
+                : $this->process->runJson($arguments, $workingDir);
         } catch (ProcessTimedOutException|ComposerCommandFailedException) {
             return [];
         }
