@@ -237,7 +237,9 @@ Active only when `--ci` flag is passed. Valid statuses for `fail_on_statuses`: `
 ],
 ```
 
-Silence known false positives. Use `ignore.packages` to skip a package entirely, or `ignore.issues` to suppress specific issue codes for a specific package.
+Silence known false positives. Use `ignore.packages` to mark a package as reviewed, or `ignore.issues` to suppress specific issue codes for a specific package.
+
+Packages listed in `ignore.packages` remain visible in console and JSON output with an `ignored` status and the configured reason. Ignored packages are excluded from the weighted project score calculation.
 
 Example:
 

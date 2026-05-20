@@ -10,6 +10,7 @@ enum PackageStatus: string
     case Watch = 'watch';
     case Risky = 'risky';
     case Critical = 'critical';
+    case Ignored = 'ignored';
 
     /** @param array<string, int> $thresholds */
     public static function fromScore(int $score, array $thresholds): self

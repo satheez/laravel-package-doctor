@@ -20,6 +20,8 @@ use Satheez\PackageDoctor\DTO\PackageHealthResult;
 use Satheez\PackageDoctor\DTO\ProcessResult;
 use Satheez\PackageDoctor\DTO\ScanOptions;
 use Satheez\PackageDoctor\DTO\ScanProgress;
+use Satheez\PackageDoctor\Enums\PackageStatus;
+use Satheez\PackageDoctor\Enums\RecommendationType;
 use Satheez\PackageDoctor\Readers\ComposerJsonReader;
 use Satheez\PackageDoctor\Readers\ComposerLockReader;
 use Satheez\PackageDoctor\Scoring\PackageScoreCalculator;
@@ -89,11 +91,23 @@ function makeComposerProcess(array $outdatedData, array $auditData, array $licen
     };
 }
 
-function makePackageDoctor(string $fixturePath, array $configOverrides = []): PackageDoctor
+function makePackageDoctor(string $fixturePath, array $configOverrides = [], array $composerDataOverrides = []): PackageDoctor
 {
     $outdatedData = json_decode(file_get_contents($fixturePath.'/composer-outdated.json'), true);
     $auditData = json_decode(file_get_contents($fixturePath.'/composer-audit.json'), true);
     $licenseData = json_decode(file_get_contents($fixturePath.'/composer-licenses.json'), true);
+
+    if (array_key_exists('outdated', $composerDataOverrides)) {
+        $outdatedData = $composerDataOverrides['outdated'];
+    }
+
+    if (array_key_exists('audit', $composerDataOverrides)) {
+        $auditData = $composerDataOverrides['audit'];
+    }
+
+    if (array_key_exists('licenses', $composerDataOverrides)) {
+        $licenseData = $composerDataOverrides['licenses'];
+    }
 
     $process = makeComposerProcess($outdatedData, $auditData, $licenseData);
 
@@ -184,6 +198,45 @@ function makePackageDoctor(string $fixturePath, array $configOverrides = []): Pa
     );
 }
 
+function makeTemporaryComposerFixture(): string
+{
+    $sourcePath = fixturesPath('composer/healthy-project');
+    $targetPath = sys_get_temp_dir().'/package-doctor-'.bin2hex(random_bytes(6));
+
+    mkdir($targetPath);
+
+    foreach (['composer.json', 'composer.lock', 'composer-outdated.json', 'composer-audit.json', 'composer-licenses.json'] as $file) {
+        copy($sourcePath.'/'.$file, $targetPath.'/'.$file);
+    }
+
+    return $targetPath;
+}
+
+function removeTemporaryComposerFixture(string $fixturePath): void
+{
+    foreach (glob($fixturePath.'/{,.}*', GLOB_BRACE) ?: [] as $path) {
+        $basename = basename($path);
+
+        if ($basename === '.') {
+            continue;
+        }
+
+        if ($basename === '..') {
+            continue;
+        }
+
+        if (is_dir($path)) {
+            rmdir($path);
+
+            continue;
+        }
+
+        unlink($path);
+    }
+
+    rmdir($fixturePath);
+}
+
 function makeServiceScanOptions(array $overrides = []): ScanOptions
 {
     return new ScanOptions(
@@ -223,6 +276,7 @@ test('analyze builds correct summary structure', function (): void {
         'watch_count',
         'risky_count',
         'critical_count',
+        'ignored_count',
         'safe_upgrade_count',
     ]);
 
@@ -298,6 +352,7 @@ test('missing composer.json returns empty report with warning', function (): voi
 
     expect($report->results)->toBeEmpty();
     expect($report->warnings)->not->toBeEmpty();
+    expect($report->summary['ignored_count'])->toBe(0);
 });
 
 test('missing composer.lock returns empty results with warning', function (): void {
@@ -311,6 +366,7 @@ test('missing composer.lock returns empty results with warning', function (): vo
 
     expect($report->results)->toBeEmpty();
     expect($report->warnings)->not->toBeEmpty();
+    expect($report->summary['ignored_count'])->toBe(0);
 });
 
 test('score-below filter removes packages above threshold', function (): void {
@@ -349,6 +405,68 @@ test('package filter limits to specified packages', function (): void {
     expect($report->results[0]->package->name)->toBe('spatie/laravel-permission');
 });
 
+test('ignored packages remain visible with configured reason', function (): void {
+    $doctor = makePackageDoctor(fixturesPath('composer/healthy-project'), [
+        'ignore' => [
+            'packages' => ['spatie/laravel-permission' => 'Covered by an internal fork.'],
+            'issues' => [],
+        ],
+    ]);
+
+    $report = $doctor->analyze(makeServiceScanOptions(['packages' => ['spatie/laravel-permission']]));
+
+    expect($report->results)->toHaveCount(1);
+
+    $result = $report->results[0];
+
+    expect($result->package->name)->toBe('spatie/laravel-permission');
+    expect($result->metadata)->toBeNull();
+    expect($result->status)->toBe(PackageStatus::Ignored);
+    expect($result->score)->toBe(100);
+    expect($result->issues)->toBe([]);
+    expect($result->recommendation->type)->toBe(RecommendationType::IgnoreConfigured);
+    expect($result->recommendation->message)->toBe('Ignored: Covered by an internal fork.');
+    expect($report->summary['ignored_count'])->toBe(1);
+});
+
+test('ignored packages are excluded from weighted project score', function (): void {
+    $doctor = makePackageDoctor(
+        fixturePath: fixturesPath('composer/healthy-project'),
+        configOverrides: [
+            'ignore' => [
+                'packages' => ['spatie/laravel-permission' => 'Manually reviewed.'],
+                'issues' => [],
+            ],
+        ],
+        composerDataOverrides: [
+            'outdated' => [
+                'installed' => [
+                    [
+                        'name' => 'guzzlehttp/guzzle',
+                        'version' => '7.8.0',
+                        'latest' => '8.0.0',
+                        'latest-status' => 'semver-major-update',
+                        'description' => 'HTTP client',
+                    ],
+                ],
+            ],
+        ],
+    );
+
+    $report = $doctor->analyze(makeServiceScanOptions([
+        'packages' => ['spatie/laravel-permission', 'guzzlehttp/guzzle'],
+    ]));
+
+    $guzzleResult = array_values(array_filter(
+        $report->results,
+        fn (PackageHealthResult $result): bool => $result->package->name === 'guzzlehttp/guzzle',
+    ))[0];
+
+    expect($guzzleResult->score)->toBeLessThan(100);
+    expect($report->summary['ignored_count'])->toBe(1);
+    expect($report->summary['project_score'])->toBe($guzzleResult->score);
+});
+
 test('default scan excludes transitive packages', function (): void {
     $doctor = makePackageDoctor(fixturesPath('composer/healthy-project'));
     $report = $doctor->analyze(makeServiceScanOptions());
@@ -383,4 +501,62 @@ test('warnings are preserved in report', function (): void {
 
     expect($report->warnings)->toBeArray();
     expect(count($report->warnings))->toBeGreaterThan(0);
+});
+
+test('history write failures add a warning without failing the scan', function (): void {
+    $basePath = fixturesPath('composer/healthy-project');
+    $historyPath = $basePath.'/.package-doctor-history.json';
+
+    if (is_file($historyPath)) {
+        unlink($historyPath);
+    }
+
+    if (! is_dir($historyPath)) {
+        mkdir($historyPath);
+    }
+
+    try {
+        $doctor = makePackageDoctor($basePath);
+        $report = $doctor->analyze(makeServiceScanOptions());
+
+        expect($report->results)->not->toBeEmpty();
+        expect($report->warnings)->toContain("Could not write package history to {$historyPath}.");
+    } finally {
+        rmdir($historyPath);
+    }
+});
+
+test('history previous score is loaded and latest summary is written', function (): void {
+    $basePath = makeTemporaryComposerFixture();
+    $historyPath = $basePath.'/.package-doctor-history.json';
+
+    file_put_contents($historyPath, json_encode(['project_score' => 91], JSON_THROW_ON_ERROR));
+
+    try {
+        $doctor = makePackageDoctor($basePath);
+        $report = $doctor->analyze(makeServiceScanOptions());
+        $history = json_decode(file_get_contents($historyPath), true);
+
+        expect($report->summary['previous_score'])->toBe(91);
+        expect($history['project_score'])->toBe($report->summary['project_score']);
+    } finally {
+        removeTemporaryComposerFixture($basePath);
+    }
+});
+
+test('invalid history is ignored with a warning', function (): void {
+    $basePath = makeTemporaryComposerFixture();
+    $historyPath = $basePath.'/.package-doctor-history.json';
+
+    file_put_contents($historyPath, '{broken-json');
+
+    try {
+        $doctor = makePackageDoctor($basePath);
+        $report = $doctor->analyze(makeServiceScanOptions());
+
+        expect($report->summary)->not->toHaveKey('previous_score');
+        expect($report->warnings)->toContain("Could not parse package history from {$historyPath}.");
+    } finally {
+        removeTemporaryComposerFixture($basePath);
+    }
 });

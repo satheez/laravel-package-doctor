@@ -19,6 +19,8 @@
 .rector-cache/
 .phpunit.result.cache
 .phpunit.cache
+.package-doctor-history.json
+/storage/app/package-doctor-history.json
 
 # ----------------------------------------------------------------------
 # Package Manager

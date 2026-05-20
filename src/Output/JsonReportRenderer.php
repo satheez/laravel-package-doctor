@@ -38,6 +38,8 @@ final class JsonReportRenderer
                     'type' => $result->recommendation->type->value,
                     'message' => $result->recommendation->message,
                 ],
+                'changelog_url' => $result->changelogUrl,
+                'replacement_package' => $result->replacementPackage,
             ];
         }
 

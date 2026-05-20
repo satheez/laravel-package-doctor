@@ -16,11 +16,14 @@ use Satheez\PackageDoctor\Compatibility\PhpCompatibilityChecker;
 use Satheez\PackageDoctor\DTO\InstalledPackage;
 use Satheez\PackageDoctor\DTO\PackageHealthResult;
 use Satheez\PackageDoctor\DTO\PackageMetadata;
+use Satheez\PackageDoctor\DTO\PackageRecommendation;
 use Satheez\PackageDoctor\DTO\ProjectHealthReport;
 use Satheez\PackageDoctor\DTO\ProjectInfo;
 use Satheez\PackageDoctor\DTO\ScanOptions;
 use Satheez\PackageDoctor\DTO\ScanProgress;
 use Satheez\PackageDoctor\Enums\DependencyType;
+use Satheez\PackageDoctor\Enums\PackageStatus;
+use Satheez\PackageDoctor\Enums\RecommendationType;
 use Satheez\PackageDoctor\Enums\UpgradeType;
 use Satheez\PackageDoctor\Readers\ComposerJsonReader;
 use Satheez\PackageDoctor\Readers\ComposerLockReader;
@@ -92,10 +95,10 @@ final class PackageDoctor
         $this->warnings = [];
         $this->githubCollector->reset();
 
-        $basePath = $this->config['project']['base_path'] ?? base_path();
-        $composerJsonPath = $this->config['project']['composer_json_path'] ?? $basePath.'/composer.json';
-        $composerLockPath = $this->config['project']['composer_lock_path'] ?? $basePath.'/composer.lock';
-        $workingDir = $this->config['composer']['working_directory'] ?? $basePath;
+        $basePath = (string) ($this->config['project']['base_path'] ?? base_path());
+        $composerJsonPath = (string) ($this->config['project']['composer_json_path'] ?? $basePath.'/composer.json');
+        $composerLockPath = (string) ($this->config['project']['composer_lock_path'] ?? $basePath.'/composer.lock');
+        $workingDir = (string) ($this->config['composer']['working_directory'] ?? $basePath);
 
         $project = $this->buildProjectInfo($basePath);
 
@@ -147,6 +150,28 @@ final class PackageDoctor
                 $totalPackages,
             );
 
+            $ignoredReason = $this->config['ignore']['packages'][$package->name] ?? null;
+
+            if ($ignoredReason !== null) {
+                $results[] = new PackageHealthResult(
+                    package: $package,
+                    metadata: null,
+                    score: 100,
+                    status: PackageStatus::Ignored,
+                    latestVersion: null,
+                    latestAllowedVersion: null,
+                    upgradeType: UpgradeType::None,
+                    isConstraintBlocked: false,
+                    issues: [],
+                    recommendation: new PackageRecommendation(
+                        type: RecommendationType::IgnoreConfigured,
+                        message: "Ignored: {$ignoredReason}"
+                    ),
+                );
+
+                continue;
+            }
+
             $result = $this->analyzePackage(
                 package: $package,
                 project: $project,
@@ -169,6 +194,7 @@ final class PackageDoctor
         }
 
         $summary = $this->buildSummary($results);
+        $summary = $this->applyHistory($summary, $basePath);
 
         return new ProjectHealthReport(
             project: $project,
@@ -214,16 +240,12 @@ final class PackageDoctor
      */
     private function applyPreScanFilters(array $packages, ScanOptions $opts): array
     {
-        $ignoredPackages = array_keys($this->config['ignore']['packages'] ?? []);
         $excludePackages = $this->config['scan']['exclude_packages'] ?? [];
         $onlyPackages = $this->config['scan']['only_packages'] ?? [];
 
         return array_values(array_filter($packages, function (InstalledPackage $pkg) use (
-            $opts, $ignoredPackages, $excludePackages, $onlyPackages
+            $opts, $excludePackages, $onlyPackages
         ): bool {
-            if (in_array($pkg->name, $ignoredPackages, true)) {
-                return false;
-            }
 
             if (in_array($pkg->name, $excludePackages, true)) {
                 return false;
@@ -336,6 +358,7 @@ final class PackageDoctor
             status: $scored['status'],
             upgradeType: $upgradeType,
             constraintBlocked: $isConstraintBlocked,
+            changelogUrl: $metadata?->changelogUrl,
         );
 
         return new PackageHealthResult(
@@ -349,6 +372,8 @@ final class PackageDoctor
             isConstraintBlocked: $isConstraintBlocked,
             issues: $scored['issues'],
             recommendation: $recommendation,
+            changelogUrl: $metadata?->changelogUrl,
+            replacementPackage: $metadata?->replacementPackage,
         );
     }
 
@@ -416,6 +441,13 @@ final class PackageDoctor
             }
         }
 
+        $changelogUrl = null;
+        if (isset($githubRelease['html_url'])) {
+            $changelogUrl = $githubRelease['html_url'];
+        } elseif (isset($githubData['html_url'])) {
+            $changelogUrl = $githubData['html_url'].'/releases';
+        }
+
         return new PackageMetadata(
             name: $package->name,
             description: $packagistData['description'] ?? $githubData['description'] ?? null,
@@ -434,6 +466,7 @@ final class PackageDoctor
             githubPushedAt: $githubPushedAt,
             latestReleaseAt: $latestReleaseAt,
             documentationUrl: $githubData['homepage'] ?? null,
+            changelogUrl: $changelogUrl,
         );
     }
 
@@ -474,6 +507,7 @@ final class PackageDoctor
                 'watch_count' => 0,
                 'risky_count' => 0,
                 'critical_count' => 0,
+                'ignored_count' => 0,
                 'safe_upgrade_count' => 0,
             ];
         }
@@ -486,15 +520,17 @@ final class PackageDoctor
 
         $weightedSum = 0.0;
         $totalWeight = 0.0;
-        $statusCounts = ['healthy_count' => 0, 'watch_count' => 0, 'risky_count' => 0, 'critical_count' => 0];
+        $statusCounts = ['healthy_count' => 0, 'watch_count' => 0, 'risky_count' => 0, 'critical_count' => 0, 'ignored_count' => 0];
         $safeUpgradeCount = 0;
 
         foreach ($results as $result) {
-            $weight = $weights[$result->package->dependencyType->value];
-            $weightedSum += $result->score * $weight;
-            $totalWeight += $weight;
-
             $statusCounts[$result->status->value.'_count'] += 1;
+
+            if ($result->status !== PackageStatus::Ignored) {
+                $weight = $weights[$result->package->dependencyType->value];
+                $weightedSum += $result->score * $weight;
+                $totalWeight += $weight;
+            }
 
             if ($result->upgradeType === UpgradeType::Patch || $result->upgradeType === UpgradeType::Minor) {
                 $safeUpgradeCount++;
@@ -509,6 +545,84 @@ final class PackageDoctor
             ...$statusCounts,
             'safe_upgrade_count' => $safeUpgradeCount,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $summary
+     * @return array<string, mixed>
+     */
+    private function applyHistory(array $summary, string $basePath): array
+    {
+        $historyFile = $this->resolveHistoryFile($basePath);
+        $previousScore = $this->readPreviousScore($historyFile);
+
+        if ($previousScore !== null) {
+            $summary['previous_score'] = $previousScore;
+        }
+
+        $this->writeHistory($historyFile, $summary);
+
+        return $summary;
+    }
+
+    private function resolveHistoryFile(string $basePath): string
+    {
+        $storageHistoryFile = $basePath.'/storage/app/package-doctor-history.json';
+
+        if (is_dir(dirname($storageHistoryFile))) {
+            return $storageHistoryFile;
+        }
+
+        return $basePath.'/.package-doctor-history.json';
+    }
+
+    private function readPreviousScore(string $historyFile): ?int
+    {
+        if (! file_exists($historyFile)) {
+            return null;
+        }
+
+        if (! is_file($historyFile)) {
+            $this->warnings[] = "Could not read package history from {$historyFile}.";
+
+            return null;
+        }
+
+        if (! is_readable($historyFile)) {
+            $this->warnings[] = "Could not read package history from {$historyFile}.";
+
+            return null;
+        }
+
+        $historyContent = file_get_contents($historyFile);
+
+        if (! is_string($historyContent)) {
+            $this->warnings[] = "Could not read package history from {$historyFile}.";
+
+            return null;
+        }
+
+        $history = json_decode($historyContent, true);
+
+        if (! is_array($history)) {
+            $this->warnings[] = "Could not parse package history from {$historyFile}.";
+
+            return null;
+        }
+
+        $previousScore = $history['project_score'] ?? null;
+
+        return is_int($previousScore) ? $previousScore : null;
+    }
+
+    /** @param  array<string, mixed>  $summary */
+    private function writeHistory(string $historyFile, array $summary): void
+    {
+        $historyJson = json_encode($summary, JSON_PRETTY_PRINT);
+
+        if (! is_string($historyJson) || is_dir($historyFile) || @file_put_contents($historyFile, $historyJson) === false) {
+            $this->warnings[] = "Could not write package history to {$historyFile}.";
+        }
     }
 
     private function emptyReport(ProjectInfo $project): ProjectHealthReport

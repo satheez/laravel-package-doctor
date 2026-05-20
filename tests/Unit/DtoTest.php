@@ -62,11 +62,13 @@ test('PackageMetadata holds values', function (): void {
         githubPushedAt: null,
         latestReleaseAt: null,
         documentationUrl: null,
+        changelogUrl: 'https://github.com/spatie/laravel-permission/releases',
     );
 
     expect($meta->name)->toBe('spatie/laravel-permission');
     expect($meta->isAbandoned)->toBeFalse();
     expect($meta->githubStars)->toBe(12000);
+    expect($meta->changelogUrl)->toBe('https://github.com/spatie/laravel-permission/releases');
 });
 
 test('PackageIssue holds values', function (): void {
@@ -152,11 +154,15 @@ test('PackageHealthResult holds values', function (): void {
         isConstraintBlocked: false,
         issues: [],
         recommendation: $rec,
+        changelogUrl: 'https://github.com/acme/lib/releases',
+        replacementPackage: 'acme/new-lib',
     );
 
     expect($result->score)->toBe(85);
     expect($result->status)->toBe(PackageStatus::Watch);
     expect($result->upgradeType)->toBe(UpgradeType::Minor);
+    expect($result->changelogUrl)->toBe('https://github.com/acme/lib/releases');
+    expect($result->replacementPackage)->toBe('acme/new-lib');
 });
 
 test('ProjectHealthReport holds values', function (): void {

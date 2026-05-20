@@ -182,6 +182,22 @@ test('Major upgrade yields ReviewBeforeUpgrade', function (): void {
     expect($rec->type)->toBe(RecommendationType::ReviewBeforeUpgrade);
 });
 
+test('Major upgrade recommendation includes changelog URL when available', function (): void {
+    $rec = makeGenerator()->generate(
+        package: makePackage(),
+        metadata: null,
+        issues: [],
+        score: 90,
+        status: PackageStatus::Healthy,
+        upgradeType: UpgradeType::Major,
+        constraintBlocked: false,
+        changelogUrl: 'https://github.com/vendor/package/releases',
+    );
+
+    expect($rec->type)->toBe(RecommendationType::ReviewBeforeUpgrade);
+    expect($rec->message)->toContain('https://github.com/vendor/package/releases');
+});
+
 test('Patch upgrade yields SafeUpgrade', function (): void {
     $rec = makeGenerator()->generate(
         package: makePackage(),
