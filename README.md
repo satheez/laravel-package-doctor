@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/banner.png" alt="Laravel Package Doctor banner" width="100%">
+
 # Laravel Package Doctor
 
 **Laravel-first dependency health and upgrade-risk analyzer for Composer projects.**
