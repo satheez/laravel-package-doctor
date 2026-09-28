@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Internal scan and audit-collector updates so the current Rector dry-run stays clean.
+
 ### Added
 - CSV report output via `--format=csv`.
 - JSON and CSV file exports via `--output=path`.

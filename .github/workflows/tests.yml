@@ -2,7 +2,9 @@ name: Tests
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   test:
@@ -28,18 +30,25 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: mbstring, dom, fileinfo
+          extensions: mbstring, dom, fileinfo, curl, zip
           coverage: none
+          tools: composer
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update
+          # Laravel 11 is outside security support. Composer blocks every 11.x
+          # release, so this job cannot install the declared range unless
+          # advisory blocking is turned off for that cell only.
+          if [ "${{ matrix.laravel }}" = "11.*" ]; then
+            composer config policy.advisories.block false
+          fi
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update --no-interaction
           composer update --prefer-dist --no-interaction --no-progress
 
       - name: Check code style
