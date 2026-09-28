@@ -46,17 +46,13 @@ final readonly class ComposerAuditCollector
         $packages = [];
 
         foreach ($data['advisories'] ?? [] as $packageName => $advisories) {
-            if (! isset($packages[$packageName])) {
-                $packages[$packageName] = ['advisories' => [], 'abandoned' => false, 'replacement' => null];
-            }
+            $packages[$packageName] ??= ['advisories' => [], 'abandoned' => false, 'replacement' => null];
 
             $packages[$packageName]['advisories'] = array_values((array) $advisories);
         }
 
         foreach ($data['abandoned'] ?? [] as $packageName => $info) {
-            if (! isset($packages[$packageName])) {
-                $packages[$packageName] = ['advisories' => [], 'abandoned' => false, 'replacement' => null];
-            }
+            $packages[$packageName] ??= ['advisories' => [], 'abandoned' => false, 'replacement' => null];
 
             $packages[$packageName]['abandoned'] = true;
             $packages[$packageName]['replacement'] = is_array($info) ? ($info['replacedBy'] ?? null) : null;

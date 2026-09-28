@@ -283,7 +283,7 @@ final class PackageDoctor
                 return false;
             }
 
-            return ! ($pkg->dependencyType === DependencyType::Transitive && ! $includeTransitive);
+            return $pkg->dependencyType !== DependencyType::Transitive || $includeTransitive;
         }));
     }
 
