@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Internal scan and audit-collector updates so the current Rector dry-run stays clean.
+- CI now tests PHP 8.5 with Laravel 12 and 13. Laravel 11 stays on PHP 8.2–8.4, which is the range it supports.
 
 ### Added
 - CSV report output via `--format=csv`.
