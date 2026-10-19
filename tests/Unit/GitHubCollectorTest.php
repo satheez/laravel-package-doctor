@@ -85,7 +85,7 @@ test('fetches latest release metadata', function (): void {
 
 test('returns null when no latest release (404)', function (): void {
     $client = makeGitHubClient([
-        new RequestException('Not Found', new Request('GET', '/'), new Response(404)),
+        new Response(404, [], '{"message":"Not Found"}'),
     ]);
 
     $collector = new GitHubCollector($client, makeGitHubCache(), makeGitHubConfig());
@@ -96,9 +96,9 @@ test('returns null when no latest release (404)', function (): void {
 
 test('adds warning on rate limit (403)', function (): void {
     $client = makeGitHubClient([
-        new RequestException('Forbidden', new Request('GET', '/'), new Response(403, [
+        new Response(403, [
             'x-ratelimit-remaining' => '0',
-        ])),
+        ], 'API rate limit exceeded'),
     ]);
 
     $collector = new GitHubCollector($client, makeGitHubCache(), makeGitHubConfig());
@@ -112,14 +112,10 @@ test('adds warning on rate limit (403)', function (): void {
 test('skips further uncached github requests after rate limit', function (): void {
     $history = [];
     $mock = new MockHandler([
-        new RequestException(
-            'Forbidden',
-            new Request('GET', '/'),
-            new Response(403, [
-                'x-ratelimit-remaining' => '0',
-                'x-ratelimit-reset' => '1735689600',
-            ]),
-        ),
+        new Response(403, [
+            'x-ratelimit-remaining' => '0',
+            'x-ratelimit-reset' => '1735689600',
+        ], 'API rate limit exceeded'),
         new Response(200, [], file_get_contents(__DIR__.'/../Fixtures/github/latest-release.json')),
     ]);
     $handlerStack = HandlerStack::create($mock);
@@ -144,11 +140,7 @@ test('skips further uncached github requests after rate limit', function (): voi
 test('returns cached github data after rate limit', function (): void {
     $history = [];
     $mock = new MockHandler([
-        new RequestException(
-            'Forbidden',
-            new Request('GET', '/'),
-            new Response(403, ['x-ratelimit-remaining' => '0']),
-        ),
+        new Response(403, ['x-ratelimit-remaining' => '0'], 'API rate limit exceeded'),
     ]);
     $handlerStack = HandlerStack::create($mock);
     $handlerStack->push(Middleware::history($history));
@@ -171,11 +163,7 @@ test('returns cached github data after rate limit', function (): void {
 test('resets rate limit state between scans', function (): void {
     $history = [];
     $mock = new MockHandler([
-        new RequestException(
-            'Forbidden',
-            new Request('GET', '/'),
-            new Response(403, ['x-ratelimit-remaining' => '0']),
-        ),
+        new Response(403, ['x-ratelimit-remaining' => '0'], 'API rate limit exceeded'),
         new Response(200, [], file_get_contents(__DIR__.'/../Fixtures/github/latest-release.json')),
     ]);
     $handlerStack = HandlerStack::create($mock);
@@ -194,6 +182,18 @@ test('resets rate limit state between scans', function (): void {
 
     expect($result)->not->toBeNull();
     expect($history)->toHaveCount(2);
+    expect($collector->warnings())->toBe([]);
+});
+
+test('returns null when the request fails before a response', function (): void {
+    $client = makeGitHubClient([
+        new RequestException('request failed', new Request('GET', '/')),
+    ]);
+
+    $collector = new GitHubCollector($client, makeGitHubCache(), makeGitHubConfig());
+    $result = $collector->fetchRepository('acme', 'pkg', offline: false, noCache: false);
+
+    expect($result)->toBeNull();
     expect($collector->warnings())->toBe([]);
 });
 

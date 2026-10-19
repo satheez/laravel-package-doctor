@@ -151,6 +151,8 @@ These tools are complementary. Package Doctor composes the data `composer outdat
 
 ## Installation
 
+Requires PHP 8.2+, Laravel 11, 12, or 13, and Guzzle 7.8 or 8.
+
 ```bash
 composer require --dev satheez/laravel-package-doctor
 ```
