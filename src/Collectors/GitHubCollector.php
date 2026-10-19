@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Satheez\PackageDoctor\Collectors;
 
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Exception\RequestException;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Psr\Http\Message\ResponseInterface;
 use Satheez\PackageDoctor\Support\CacheKey;
@@ -146,9 +146,12 @@ final class GitHubCollector
             $data = json_decode($body, true);
 
             return is_array($data) ? $data : null;
-        } catch (RequestException $e) {
+        } catch (BadResponseException $e) {
+            // Guzzle 8 removed RequestException::getResponse(). HTTP error
+            // responses are BadResponseException on both 7.8 and 8, and that
+            // class still exposes the response.
             $response = $e->getResponse();
-            if ($response instanceof ResponseInterface && $this->isRateLimitResponse($response)) {
+            if ($this->isRateLimitResponse($response)) {
                 $this->rateLimited = true;
                 $this->addRateLimitWarning($response);
             }

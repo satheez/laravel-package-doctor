@@ -6,6 +6,7 @@
 |---|---|
 | PHP | `^8.2` |
 | Laravel | `^11.0`, `^12.0`, or `^13.0` |
+| Guzzle | `^7.8` or `^8.0` |
 | Composer | `2.x` |
 
 ## Install

@@ -60,7 +60,7 @@ PackageDoctorCommand
 
 - **CLI-first**: No database, no dashboard, no HTTP server required.
 - **Laravel-native**: Uses the service container, config system, and cache; registers as a standard service provider.
-- **Dependency-light**: Runtime dependencies are limited to Guzzle (HTTP), Composer Semver (version parsing), and Symfony Process (Composer subprocess execution).
+- **Dependency-light**: Runtime dependencies are limited to Guzzle 7.8 or 8 (HTTP), Composer Semver (version parsing), and Symfony Process (Composer subprocess execution).
 - **Immutable DTOs**: All data crossing service boundaries is carried in `readonly` PHP 8.2+ DTOs.
 - **Single-responsibility scoring rules**: Each issue code has its own class in `Scoring/Rules/`, making it easy to add, modify, or disable individual checks.
 - **Testable without side effects**: Collectors and HTTP clients are injected via the constructor; tests use fixtures and HTTP mocks.

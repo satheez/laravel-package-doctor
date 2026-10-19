@@ -8,8 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Allow `guzzlehttp/guzzle` `^7.8` or `^8.0`. Laravel 11 and 12 still resolve Guzzle 7; Laravel 13 can resolve Guzzle 8.
+- Read GitHub HTTP error responses from `BadResponseException`, which exposes the response on both Guzzle 7.8 and 8.
 - Internal scan and audit-collector updates so the current Rector dry-run stays clean.
 - CI now tests PHP 8.5 with Laravel 12 and 13. Laravel 11 stays on PHP 8.2–8.4, which is the range it supports.
+- CI resolves Guzzle 7 on the existing matrix and Guzzle 8 on PHP 8.4 and 8.5 with Laravel 13.
 
 ### Added
 - CSV report output via `--format=csv`.
